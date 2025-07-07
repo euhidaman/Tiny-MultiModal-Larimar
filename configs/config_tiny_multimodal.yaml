@@ -1,0 +1,277 @@
+# Configuration for Tiny MultiModal Larimar
+
+# Model Configuration
+model:
+  # Architecture
+  latent_size: 384
+  hidden_size: 768
+  memory_size: 128
+  use_memory: true
+
+  # Model Names
+  vision_model_name: "facebook/dinov2-base"
+  text_model_name: "distilbert-base-uncased"
+  decoder_model_name: "distilgpt2"
+
+  # Training Parameters
+  learning_rate: 5e-5
+  weight_decay: 0.01
+  warmup_steps: 1000
+  max_steps: 10000
+
+  # VAE Parameters
+  beta: 0.5
+  beta_schedule: "linear" # "linear", "cosine", "constant"
+  beta_start: 0.0
+  beta_end: 0.5
+
+  # Loss Weights
+  reconstruction_strength: 1.0
+  memory_strength: 1.0
+
+  # Freezing
+  freeze_vision: false
+  freeze_text: false
+
+  # Multimodal Fusion
+  use_cross_attention: true
+  num_attention_heads: 8
+
+  # Generation
+  max_length: 512
+  temperature: 1.0
+  top_k: 50
+  top_p: 0.95
+
+  # Vocabulary
+  vocab_size: 50257
+
+# Data Configuration
+data:
+  # Paths
+  train_data_path: "data/train"
+  val_data_path: null
+  test_data_path: null
+
+  # Data Type
+  data_type: "multimodal" # "multimodal", "babylm", "conceptual"
+
+  # Processing
+  max_length: 512
+  image_size: 224
+  mode: "multimodal" # "vision", "text", "multimodal"
+
+  # DataLoader
+  batch_size: 16
+  num_workers: 4
+  pin_memory: true
+
+  # Optional
+  max_samples: null
+
+# Training Configuration
+trainer:
+  # Hardware
+  accelerator: "auto"
+  devices: 1
+  strategy: "auto"
+  precision: "32"
+
+  # Training
+  max_epochs: 10
+  max_steps: 10000
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+
+  # Validation
+  val_check_interval: 0.25
+  check_val_every_n_epoch: 1
+
+  # Optimization
+  optimizer: "adamw"
+  scheduler: "cosine"
+
+  # Other
+  fast_dev_run: false
+  overfit_batches: 0
+  log_every_n_steps: 50
+
+# Logging Configuration
+logging:
+  logger: "tensorboard" # "tensorboard", "wandb", "none"
+  log_dir: "logs"
+
+  # Weights & Biases
+  wandb_project: "tiny-multimodal-larimar"
+  wandb_entity: null
+
+  # Checkpoints
+  checkpoint_dir: "checkpoints"
+  save_top_k: 3
+  save_every_n_epochs: 1
+
+  # Samples
+  save_samples: true
+  log_every_n_steps: 100
+
+# Callback Configuration
+callbacks:
+  # Early Stopping
+  early_stopping:
+    monitor: "val/total_loss"
+    patience: 5
+    min_delta: 0.001
+    mode: "min"
+
+  # Model Checkpoint
+  model_checkpoint:
+    monitor: "val/total_loss"
+    mode: "min"
+    save_top_k: 3
+    save_last: true
+    every_n_epochs: 1
+
+# Experiment Configuration
+experiment:
+  name: "tiny-multimodal-larimar"
+  description: "Tiny multimodal VAE with episodic memory based on Larimar"
+  tags: ["multimodal", "vae", "memory", "larimar", "tiny"]
+
+  # Reproducibility
+  seed: 42
+  deterministic: false
+
+  # Profiling
+  profiler: null # "simple", "advanced", "pytorch"
+
+  # Monitoring
+  monitor_gpu: true
+  monitor_memory: true
+
+# Data Processing Configuration
+preprocessing:
+  # Text Processing
+  text:
+    tokenizer_name: "distilbert-base-uncased"
+    max_length: 512
+    padding: "max_length"
+    truncation: true
+    lowercase: false
+
+  # Image Processing
+  image:
+    processor_name: "facebook/dinov2-base"
+    image_size: 224
+    normalize: true
+    augment: false
+
+  # Multimodal
+  multimodal:
+    alignment: "cross_attention"
+    fusion_type: "early" # "early", "late", "hybrid"
+
+# Evaluation Configuration
+evaluation:
+  # Metrics
+  metrics:
+    - "perplexity"
+    - "bleu"
+    - "rouge"
+    - "reconstruction_error"
+    - "memory_utilization"
+
+  # Generation
+  generation:
+    max_length: 50
+    num_beams: 4
+    temperature: 1.0
+    top_k: 50
+    top_p: 0.95
+    do_sample: true
+    num_return_sequences: 1
+
+  # Evaluation Data
+  eval_data:
+    batch_size: 32
+    num_samples: 1000
+
+# Memory Configuration
+memory:
+  # Memory Parameters
+  memory_size: 128
+  direct_writing: true
+  ordering: false
+  pseudoinverse_approx_step: 8
+  observation_noise_std: 0.000001
+
+  # Memory Training
+  memory_strength: 1.0
+  identity_init: false
+  w_logvar_setting: 0
+  deterministic_w: false
+
+  # Memory Evaluation
+  memory_analysis: true
+  save_memory_states: false
+  visualize_memory: false
+
+# Optimization Configuration
+optimization:
+  # Optimizer
+  optimizer:
+    name: "adamw"
+    lr: 5e-5
+    weight_decay: 0.01
+    betas: [0.9, 0.999]
+    eps: 1e-8
+
+  # Scheduler
+  scheduler:
+    name: "cosine"
+    warmup_steps: 1000
+    max_steps: 10000
+    eta_min: 0.0
+
+  # Gradient
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: "norm"
+
+  # Mixed Precision
+  use_amp: false
+  amp_level: "O1"
+
+# Hardware Configuration
+hardware:
+  # GPU
+  gpu_ids: [0]
+  mixed_precision: false
+
+  # CPU
+  num_workers: 4
+  pin_memory: true
+
+  # Memory
+  max_memory_gb: 16
+
+  # Distributed
+  distributed: false
+  backend: "nccl"
+
+# Debugging Configuration
+debug:
+  # Development
+  fast_dev_run: false
+  overfit_batches: 0
+  limit_train_batches: 1.0
+  limit_val_batches: 1.0
+  limit_test_batches: 1.0
+
+  # Profiling
+  profiler: null
+  detect_anomaly: false
+  track_grad_norm: false
+
+  # Logging
+  log_gpu_memory: false
+  log_grad_norm: false
+  print_model_summary: true
