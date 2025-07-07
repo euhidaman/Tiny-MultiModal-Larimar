@@ -1,0 +1,13 @@
+# Minimal requirements for dataset exploration (CPU only)
+# Use this for dataset exploration on your local machine
+
+numpy>=1.24.0
+pandas>=2.0.0
+requests>=2.31.0
+tqdm>=4.65.0
+
+# Optional: for better file handling
+pathlib2>=2.3.0
+
+# Optional: for advanced text processing
+nltk>=3.8
