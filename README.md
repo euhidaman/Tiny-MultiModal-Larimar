@@ -6,10 +6,10 @@ A smaller, cognitively-inspired multimodal model based on Larimar architecture, 
 
 This model combines:
 - **Vision Encoder**: DiNOv2 ViT-Base for visual representation
-- **Text Encoder**: DistilBERT-Base for text understanding  
+- **Text Encoder**: DeBERTa-v3-Base for superior text understanding  
 - **Multimodal Fusion**: Cross-attention mechanism between vision and text
-- **Episodic Memory**: Smaller memory bank (128 slots) for memory-augmented generation
-- **Decoder**: DistilGPT-2 for text generation
+- **Episodic Memory**: Memory bank (256 slots) for memory-augmented generation
+- **Decoder**: GPT2-Medium for high-quality text generation
 
 ## Key Features
 
@@ -83,10 +83,11 @@ See `example_usage.ipynb` for detailed examples of how to use the model componen
 ## Model Configuration
 
 - **Vision Encoder**: DiNOv2 ViT-Base (768 dim)
-- **Text Encoder**: DistilBERT-Base (768 dim)
-- **Latent Size**: 384 (smaller than original 768)
-- **Memory Size**: 128 slots (vs 512 in original)
-- **Decoder**: DistilGPT-2 (768 dim)
+- **Text Encoder**: DeBERTa-v3-Base (768 dim) - Upgraded for better performance
+- **Latent Size**: 512 (increased from 384)
+- **Memory Size**: 256 slots (increased from 128)
+- **Decoder**: GPT2-Medium (1024 dim) - Upgraded for better generation
 - **Episode Length**: 8 (vs 16 in original)
+- **Total Parameters**: ~300M (more capable while remaining efficient)
 
-This design achieves a good balance between model capacity and computational efficiency while maintaining the cognitive principles of the original Larimar architecture.
+This design achieves better performance than the original smaller version while maintaining efficiency compared to the full Larimar architecture (230M+ parameters).

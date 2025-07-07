@@ -2,22 +2,22 @@
 
 # Model Configuration
 model:
-  # Architecture
-  latent_size: 384
-  hidden_size: 768
-  memory_size: 128
+  # Architecture (Updated for better models)
+  latent_size: 512 # Increased for better representations
+  hidden_size: 1024 # Increased for GPT2-medium compatibility
+  memory_size: 256 # Increased memory for better performance
   use_memory: true
 
   # Model Names
   vision_model_name: "facebook/dinov2-base"
-  text_model_name: "distilbert-base-uncased"
-  decoder_model_name: "distilgpt2"
+  text_model_name: "microsoft/deberta-v3-base" # Upgraded: DeBERTa-v3 (better performance)
+  decoder_model_name: "gpt2-medium" # Upgraded: GPT2-medium (better generation)
 
-  # Training Parameters
-  learning_rate: 5e-5
+  # Training Parameters (Optimized for better models)
+  learning_rate: 3e-5 # Slightly lower for stability
   weight_decay: 0.01
-  warmup_steps: 1000
-  max_steps: 10000
+  warmup_steps: 2000 # More warmup for larger models
+  max_steps: 15000 # More steps for better convergence
 
   # VAE Parameters
   beta: 0.5
@@ -61,8 +61,8 @@ data:
   image_size: 224
   mode: "multimodal" # "vision", "text", "multimodal"
 
-  # DataLoader
-  batch_size: 16
+  # DataLoader (Updated for better models)
+  batch_size: 12 # Reduced for larger model
   num_workers: 4
   pin_memory: true
 
@@ -75,7 +75,7 @@ trainer:
   accelerator: "auto"
   devices: 1
   strategy: "auto"
-  precision: "32"
+  precision: "16" # Use FP16 for memory efficiency
 
   # Training
   max_epochs: 10

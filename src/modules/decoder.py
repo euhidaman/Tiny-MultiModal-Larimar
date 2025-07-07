@@ -1,31 +1,33 @@
 import torch
 import torch.nn as nn
-from transformers import GPT2LMHeadModel, GPT2Config
+from transformers import GPT2LMHeadModel, GPT2Config, AutoModelForCausalLM
 from typing import Optional, Tuple, Dict, Any, List
 import math
 
 
-class DistilGPT2Decoder(nn.Module):
+class UnifiedGPT2Decoder(nn.Module):
     """
-    Decoder using DistilGPT-2 for Tiny-MultiModal-Larimar.
+    Unified decoder using GPT-2 variants for Tiny-MultiModal-Larimar.
+    Supports DistilGPT-2, GPT2-medium, and other GPT-2 variants.
     Handles text generation conditioned on multimodal latent representations.
     """
 
     def __init__(self,
-                 model_name: str = "distilgpt2",
+                 model_name: str = "gpt2-medium",
                  latent_size: int = 384,
                  vocab_size: int = 50257,
                  max_length: int = 512,
                  add_latent_conditioning: bool = True):
-        super(DistilGPT2Decoder, self).__init__()
+        super(UnifiedGPT2Decoder, self).__init__()
 
+        self.model_name = model_name
         self.latent_size = latent_size
         self.vocab_size = vocab_size
         self.max_length = max_length
         self.add_latent_conditioning = add_latent_conditioning
 
-        # Load DistilGPT-2 model
-        self.gpt2_model = GPT2LMHeadModel.from_pretrained(model_name)
+        # Load GPT-2 model using AutoModel for flexibility
+        self.gpt2_model = AutoModelForCausalLM.from_pretrained(model_name)
         self.gpt2_config = self.gpt2_model.config
 
         # GPT-2 hidden size
@@ -354,3 +356,7 @@ class LatentToText(nn.Module):
         """
         projected = self.projection(latent)
         return self.layer_norm(projected)
+
+
+# Backward compatibility alias
+DistilGPT2Decoder = UnifiedGPT2Decoder

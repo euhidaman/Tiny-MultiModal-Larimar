@@ -1,30 +1,35 @@
 import torch
 import torch.nn as nn
-from transformers import DistilBertModel, DistilBertConfig
+from transformers import (
+    DistilBertModel, DistilBertConfig,
+    DebertaV2Model, DebertaV2Config,
+    AutoModel, AutoConfig
+)
 from typing import Optional, Tuple, Dict, Any
 import math
 
 
-class DistilBERTTextEncoder(nn.Module):
+class UnifiedTextEncoder(nn.Module):
     """
-    Text encoder using DistilBERT for Tiny-MultiModal-Larimar.
-    Handles text input and provides textual features for multimodal processing.
+    Unified text encoder supporting multiple transformer models for Tiny-MultiModal-Larimar.
+    Supports DistilBERT, DeBERTa-v3, and other transformer models.
     """
 
     def __init__(self,
-                 model_name: str = "distilbert-base-uncased",
+                 model_name: str = "microsoft/deberta-v3-base",
                  latent_size: int = 384,
                  freeze_backbone: bool = False,
                  add_projection: bool = True,
                  max_length: int = 512):
-        super(DistilBERTTextEncoder, self).__init__()
+        super(UnifiedTextEncoder, self).__init__()
 
+        self.model_name = model_name
         self.latent_size = latent_size
         self.freeze_backbone = freeze_backbone
         self.max_length = max_length
 
-        # Load DistilBERT model
-        self.text_model = DistilBertModel.from_pretrained(model_name)
+        # Load model using AutoModel for flexibility
+        self.text_model = AutoModel.from_pretrained(model_name)
         self.text_config = self.text_model.config
 
         # Freeze backbone if specified
@@ -32,8 +37,8 @@ class DistilBERTTextEncoder(nn.Module):
             for param in self.text_model.parameters():
                 param.requires_grad = False
 
-        # DistilBERT outputs 768-dimensional features
-        self.hidden_size = self.text_config.hidden_size  # 768
+        # Get hidden size from config
+        self.hidden_size = self.text_config.hidden_size
 
         # Optional projection layer to match latent size
         if add_projection and self.hidden_size != latent_size:
@@ -45,6 +50,14 @@ class DistilBERTTextEncoder(nn.Module):
             )
         else:
             self.projection = None
+
+        # Handle different model architectures
+        if 'deberta' in model_name.lower():
+            # DeBERTa models don't return token_type_ids
+            self.supports_token_type_ids = False
+        else:
+            # BERT-based models support token_type_ids
+            self.supports_token_type_ids = True
 
         # Linear layer for VAE-style latent encoding (mean and logvar)
         self.latent_encoder = nn.Linear(latent_size, latent_size * 2)
@@ -71,12 +84,19 @@ class DistilBERTTextEncoder(nn.Module):
         """
         batch_size = input_ids.size(0)
 
-        # Pass through DistilBERT
-        outputs = self.text_model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            output_hidden_states=output_hidden_states
-        )
+        # Prepare inputs based on model type
+        model_inputs = {
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
+            'output_hidden_states': output_hidden_states
+        }
+
+        # Only add token_type_ids for models that support it
+        if self.supports_token_type_ids and token_type_ids is not None:
+            model_inputs['token_type_ids'] = token_type_ids
+
+        # Pass through the transformer model
+        outputs = self.text_model(**model_inputs)
 
         # Get last hidden state: [batch_size, seq_len, hidden_size]
         last_hidden_state = outputs.last_hidden_state
@@ -265,3 +285,7 @@ class TextEmbeddingLayer(nn.Module):
         embedded = self.embedding(input_ids) * math.sqrt(self.d_model)
         embedded = self.pos_encoding(embedded)
         return self.dropout(embedded)
+
+
+# Backward compatibility alias
+DistilBERTTextEncoder = UnifiedTextEncoder
