@@ -1,0 +1,62 @@
+# Configuration for Tiny-MultiModal-Larimar using authentic Larimar architecture
+# This config integrates Larimar text encoder/decoder with DiNOv2 vision encoder
+
+# Data settings
+data_path: "data/babylm"
+dataset_type: "cc_3M" # "cc_3M" or "local_narr"
+max_length: 512
+
+# Model architecture
+text_model: "bert-base-uncased" # Larimar uses BERT, not DeBERTa
+vision_model: "facebook/dinov2-base" # Keep DiNOv2 for vision
+decoder_model: "gpt2-medium" # Larimar uses GPT2 for decoding
+text_latent_size: 384
+vision_latent_size: 384
+memory_size: 512
+use_memory: true
+fusion_type: "cross_attention" # "cross_attention", "concat", "add"
+
+# Training hyperparameters
+batch_size: 12
+learning_rate: 1e-4
+weight_decay: 0.01
+max_epochs: 10
+warmup_steps: 1000
+kl_warmup_steps: 5000
+memory_warmup_steps: 3000
+
+# Loss weights (following Larimar paper)
+kl_weight: 1.0
+memory_weight: 1.0
+reconstruction_weight: 1.0
+
+# Optimization
+optimizer: "adamw"
+scheduler: "linear"
+gradient_clip_val: 1.0
+accumulate_grad_batches: 1
+
+# Hardware
+devices: 1
+accelerator: "auto"
+strategy: "auto"
+precision: "16-mixed"
+num_workers: 4
+
+# Logging and checkpointing
+output_dir: "outputs"
+experiment_name: "larimar_babylm_authentic"
+logger: "tensorboard" # "tensorboard" or "wandb"
+wandb_project: "tiny-multimodal-larimar"
+save_top_k: 3
+every_n_epochs: 1
+log_every_n_steps: 100
+
+# Validation
+val_check_interval: 1.0
+early_stopping_patience: 5
+early_stopping_monitor: "val/loss"
+
+# For debugging (set to smaller values)
+limit_train_batches: 1.0
+limit_val_batches: 1.0

@@ -15,7 +15,7 @@ class BabyLMMultiModalDataset(Dataset):
 
     def __init__(self,
                  data_path: str,
-                 tokenizer_name: str = "microsoft/deberta-v3-base",
+                 tokenizer_name: str = "bert-base-uncased",
                  max_length: int = 512,
                  dataset_type: str = "cc_3M"):  # "cc_3M" or "local_narr"
 
@@ -23,12 +23,12 @@ class BabyLMMultiModalDataset(Dataset):
         self.max_length = max_length
         self.dataset_type = dataset_type
 
-        # Load tokenizer
+        # Load tokenizer (BERT-based for Larimar compatibility)
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
 
-        # Add padding token if not present
+        # Add padding token if not present (BERT usually has [PAD])
         if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.tokenizer.pad_token = '[PAD]'
 
         # Load data
         self.captions, self.embeddings = self._load_data()
@@ -117,7 +117,7 @@ class BabyLMMultiModalDataModule(L.LightningDataModule):
 
     def __init__(self,
                  data_path: str = "data/babylm",
-                 tokenizer_name: str = "microsoft/deberta-v3-base",
+                 tokenizer_name: str = "bert-base-uncased",
                  max_length: int = 512,
                  batch_size: int = 12,
                  num_workers: int = 4,
