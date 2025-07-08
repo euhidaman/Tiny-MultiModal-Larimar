@@ -273,7 +273,7 @@ def download_conceptual_captions():
         "alternative": "Use pre-computed DiNOv2 embeddings instead"
     }
 
-    with open(info_file, 'w') as f:
+    with open(info_file, 'w', encoding='utf-8') as f:
         json.dump(cc_info, f, indent=2)
 
     log_message(f"Conceptual Captions info saved to: {info_file}")
@@ -316,7 +316,7 @@ def create_dummy_multimodal_data():
         }
 
         caption_file = embeddings_dir / f"image_{i:04d}.json"
-        with open(caption_file, 'w') as f:
+        with open(caption_file, 'w', encoding='utf-8') as f:
             json.dump(caption_data, f, indent=2)
 
     log_message(
@@ -329,7 +329,7 @@ def generate_dataset_report():
 
     report_file = DATA_DIR / "dataset_report.md"
 
-    with open(report_file, 'w') as f:
+    with open(report_file, 'w', encoding='utf-8') as f:
         f.write("# Dataset Exploration Report\n\n")
         f.write(
             f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
