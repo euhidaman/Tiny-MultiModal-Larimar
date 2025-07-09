@@ -12,7 +12,7 @@ echo "🐍 Installing Python dependencies..."
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 pip install transformers datasets lightning accelerate
 pip install numpy pandas tqdm wandb weave
-pip install PyYAML scikit-learn
+pip install PyYAML scikit-learn requests
 
 # Setup W&B with your credentials
 echo "🔧 Setting up Weights & Biases..."

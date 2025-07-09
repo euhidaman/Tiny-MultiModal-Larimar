@@ -53,54 +53,80 @@ class DiNOv2VisionEncoder(nn.Module):
         # Layer norm for output
         self.layer_norm = nn.LayerNorm(latent_size)
 
-    def forward(self, pixel_values: torch.Tensor,
+    def forward(self, vision_input: torch.Tensor,
                 output_hidden_states: bool = False,
                 return_spatial_features: bool = False) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """
         Forward pass through vision encoder
         Args:
-            pixel_values: [batch_size, channels, height, width]
+            vision_input: Either:
+                - [batch_size, channels, height, width] for raw pixel values
+                - [batch_size, hidden_size] for pre-computed DiNOv2 embeddings
             output_hidden_states: Whether to return all hidden states
             return_spatial_features: Whether to return spatial patch features
         Returns:
             pooled_output: [batch_size, latent_size] - Global image representation
             spatial_features: [batch_size, num_patches, latent_size] - Spatial patch features (optional)
         """
-        batch_size = pixel_values.size(0)
+        batch_size = vision_input.size(0)
 
-        # Pass through DiNOv2
-        outputs = self.vision_model(
-            pixel_values=pixel_values, output_hidden_states=output_hidden_states)
+        # Check if input is pre-computed embeddings or raw pixel values
+        if vision_input.dim() == 2:
+            # Pre-computed DiNOv2 embeddings: [batch_size, hidden_size]
+            # Apply projection directly to the embeddings
+            if self.projection is not None:
+                pooled_output = self.projection(vision_input)
+            else:
+                pooled_output = vision_input
+            
+            # Apply layer norm
+            pooled_output = self.layer_norm(pooled_output)
+            
+            # No spatial features for pre-computed embeddings
+            spatial_features = None
+            
+        elif vision_input.dim() == 4:
+            # Raw pixel values: [batch_size, channels, height, width]
+            # Pass through DiNOv2
+            outputs = self.vision_model(
+                pixel_values=vision_input, output_hidden_states=output_hidden_states)
 
-        # Get last hidden state: [batch_size, num_patches + 1, hidden_size]
-        # Note: DiNOv2 doesn't have a CLS token, so we use the first token as global representation
-        last_hidden_state = outputs.last_hidden_state
+            # Get last hidden state: [batch_size, num_patches + 1, hidden_size]
+            # Note: DiNOv2 doesn't have a CLS token, so we use the first token as global representation
+            last_hidden_state = outputs.last_hidden_state
 
-        # Apply projection if needed
-        if self.projection is not None:
-            last_hidden_state = self.projection(last_hidden_state)
+            # Apply projection if needed
+            if self.projection is not None:
+                last_hidden_state = self.projection(last_hidden_state)
 
-        # Extract global representation (mean pooling over all patches)
-        pooled_output = last_hidden_state.mean(
-            dim=1)  # [batch_size, latent_size]
+            # Extract global representation (mean pooling over all patches)
+            pooled_output = last_hidden_state.mean(
+                dim=1)  # [batch_size, latent_size]
 
-        # Apply layer norm
-        pooled_output = self.layer_norm(pooled_output)
+            # Apply layer norm
+            pooled_output = self.layer_norm(pooled_output)
+
+            if return_spatial_features:
+                # Add positional encoding to spatial features
+                num_patches = last_hidden_state.size(1)
+                if num_patches <= self.max_patches:
+                    spatial_features = last_hidden_state + \
+                        self.spatial_pos_emb[:, :num_patches, :]
+                else:
+                    # Handle case where image has more patches than expected
+                    spatial_features = last_hidden_state
+
+                spatial_features = self.layer_norm(spatial_features)
+            else:
+                spatial_features = None
+                
+        else:
+            raise ValueError(f"Invalid vision_input shape: {vision_input.shape}. Expected either [batch_size, channels, height, width] or [batch_size, hidden_size]")
 
         if return_spatial_features:
-            # Add positional encoding to spatial features
-            num_patches = last_hidden_state.size(1)
-            if num_patches <= self.max_patches:
-                spatial_features = last_hidden_state + \
-                    self.spatial_pos_emb[:, :num_patches, :]
-            else:
-                # Handle case where image has more patches than expected
-                spatial_features = last_hidden_state
-
-            spatial_features = self.layer_norm(spatial_features)
             return pooled_output, spatial_features
         else:
-            return pooled_output, None
+            return pooled_output
 
     def get_patch_embeddings(self, pixel_values: torch.Tensor) -> torch.Tensor:
         """

@@ -4,7 +4,7 @@ from transformers import (
     BertModel, BertConfig, BertTokenizer,
     AutoModel, AutoConfig
 )
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List
 import math
 
 
