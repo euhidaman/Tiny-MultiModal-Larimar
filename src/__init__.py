@@ -3,23 +3,28 @@ Tiny MultiModal Larimar - A smaller, cognitively-inspired multimodal model
 based on Larimar architecture with episodic memory control.
 """
 
-from .modules.multimodal_vae import TinyMultiModalVAE
-from .modules.lightning_model import TinyMultiModalLitModel
-from .modules.data import MultiModalDataModule
+from .modules.larimar_multimodal_vae import LarimarMultiModalVAE, LarimarMultiModalConfig
+from .modules.larimar_babylm_lightning import LarimarBabyLMLightningModel
+from .modules.babylm_data import BabyLMMultiModalDataModule, BabyLMMultiModalDataset
 from .modules.vision_encoder import DiNOv2VisionEncoder
-from .modules.text_encoder import DistilBERTTextEncoder
-from .modules.decoder import DistilGPT2Decoder
-from .modules.memory import TinyMemory
+from .modules.larimar_text_encoder import LarimarTextEncoder, BertForLatentConnector
+from .modules.larimar_gpt2_decoder import LarimarGPT2Decoder, GPT2ForLatentConnector
+from .modules.larimar_memory import TinyLarimarMemory, LarimarMemoryVAE
 
 __version__ = "0.1.0"
 __author__ = "Tiny-MultiModal-Larimar Team"
 
 __all__ = [
-    "TinyMultiModalVAE",
-    "TinyMultiModalLitModel",
-    "MultiModalDataModule",
+    "LarimarMultiModalVAE",
+    "LarimarMultiModalConfig",
+    "LarimarBabyLMLightningModel",
+    "BabyLMMultiModalDataModule",
+    "BabyLMMultiModalDataset",
     "DiNOv2VisionEncoder",
-    "DistilBERTTextEncoder",
-    "DistilGPT2Decoder",
-    "TinyMemory"
+    "LarimarTextEncoder",
+    "BertForLatentConnector",
+    "LarimarGPT2Decoder",
+    "GPT2ForLatentConnector",
+    "TinyLarimarMemory",
+    "LarimarMemoryVAE"
 ]

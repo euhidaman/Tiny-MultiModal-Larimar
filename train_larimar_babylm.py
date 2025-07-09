@@ -118,11 +118,17 @@ def parse_args():
                         help="Log every N steps")
 
     # Logging backend
-    parser.add_argument("--logger", type=str, default="tensorboard",
+    parser.add_argument("--logger", type=str, default="wandb",
                         choices=["tensorboard", "wandb"],
                         help="Logger backend")
     parser.add_argument("--wandb_project", type=str, default="tiny-multimodal-larimar",
                         help="Wandb project name")
+    parser.add_argument("--wandb_entity", type=str, default="babylm-ntust",
+                        help="Wandb entity/team name")
+    parser.add_argument("--run_name", type=str, default=None,
+                        help="Run name (auto-generated if not provided)")
+    parser.add_argument("--wandb_key", type=str, default="5fba3726e4e32540d9fcba403f880dfaad983051",
+                        help="Wandb API key")
 
     # Configuration file
     parser.add_argument("--config", type=str, default=None,
@@ -176,11 +182,33 @@ def create_model_config(args) -> LarimarMultiModalConfig:
 def setup_logging(args):
     """Setup logging backend"""
     if args.logger == "wandb":
+        # Set up W&B with your credentials
+        import wandb
+        os.environ["WANDB_API_KEY"] = args.wandb_key
+
+        # Auto-generate run name if not provided
+        if args.run_name is None:
+            # Find the next available run number
+            run_number = 1
+            try:
+                api = wandb.Api()
+                runs = api.runs(f"{args.wandb_entity}/{args.wandb_project}")
+                existing_names = [
+                    run.name for run in runs if run.name and run.name.startswith("baby-larimar")]
+                while f"baby-larimar{run_number}" in existing_names:
+                    run_number += 1
+            except:
+                pass  # If API fails, start with 1
+            args.run_name = f"baby-larimar{run_number}"
+
         logger = WandbLogger(
             project=args.wandb_project,
-            name=args.experiment_name,
+            entity=args.wandb_entity,
+            name=args.run_name,
             save_dir=args.output_dir
         )
+        print(
+            f"🔗 W&B logging setup: {args.wandb_entity}/{args.wandb_project} - {args.run_name}")
     else:
         logger = TensorBoardLogger(
             save_dir=args.output_dir,
