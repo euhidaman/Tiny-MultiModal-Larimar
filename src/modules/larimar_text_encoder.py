@@ -10,8 +10,8 @@ import math
 
 class BertForLatentConnector(nn.Module):
     """
-    BERT encoder for latent space connection, similar to original Larimar architecture.
-    This replaces the DeBERTa encoder with the original Larimar BERT-based encoder.
+    BERT encoder for latent space connection using Larimar architecture.
+    Replaces DeBERTa encoder with original Larimar BERT-based approach.
     """
 
     def __init__(self,

@@ -1,6 +1,8 @@
 # Tiny-MultiModal-Larimar .gitignore
+# Git ignore file for the project
 
 # Datasets and Data Files
+# Large data files should not be committed
 data/
 datasets/
 *.zip
@@ -13,6 +15,7 @@ datasets/
 *.hdf5
 
 # Model Files
+# Trained models are too large for git
 checkpoints/
 models/
 *.ckpt
@@ -22,6 +25,7 @@ models/
 *.safetensors
 
 # Logs and Outputs
+# Training logs and experiment outputs
 logs/
 runs/
 outputs/
@@ -30,6 +34,7 @@ lightning_logs/
 tensorboard_logs/
 
 # Cache and Temp Files
+# Python cache and temporary files
 .cache/
 __pycache__/
 *.pyc
@@ -42,6 +47,7 @@ __pycache__/
 htmlcov/
 
 # IDE and Editor Files
+# Development environment configuration
 .vscode/
 .idea/
 *.swp
@@ -49,11 +55,13 @@ htmlcov/
 *~
 
 # OS Files
+# Operating system generated files
 .DS_Store
 Thumbs.db
 .directory
 
 # Environment Files
+# Virtual environment and config files
 .env
 .venv
 env/
@@ -63,9 +71,11 @@ env.bak/
 venv.bak/
 
 # Jupyter Notebook
+# Notebook checkpoint files
 .ipynb_checkpoints
 
 # Distribution / packaging
+# Python packaging files
 .Python
 build/
 develop-eggs/
@@ -86,14 +96,17 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
+# Windows installer files
 *.manifest
 *.spec
 
 # Installer logs
+# Package installation logs
 pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+# Testing and coverage files
 htmlcov/
 .tox/
 .nox/
@@ -107,20 +120,25 @@ coverage.xml
 .hypothesis/
 
 # Sphinx documentation
+# Documentation build files
 docs/_build/
 
 # PyBuilder
+# Build tool files
 .pybuilder/
 target/
 
 # Celery
+# Task queue files
 celerybeat-schedule
 celerybeat.pid
 
 # SageMath parsed files
+# Math software files
 *.sage.py
 
 # Environments
+# Environment configuration files
 .env
 .venv
 env/
@@ -130,25 +148,32 @@ env.bak/
 venv.bak/
 
 # Spyder project settings
+# IDE project files
 .spyderproject
 .spyproject
 
 # Rope project settings
+# Refactoring tool files
 .ropeproject
 
 # mkdocs documentation
+# Documentation site files
 /site
 
 # mypy
+# Type checker files
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
 # Pyre type checker
+# Static analysis files
 .pyre/
 
 # pytype static type analyzer
+# Type analysis files
 .pytype/
 
 # Cython debug symbols
+# Debugging files
 cython_debug/

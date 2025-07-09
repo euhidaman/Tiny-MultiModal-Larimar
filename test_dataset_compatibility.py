@@ -24,17 +24,17 @@ def test_dataset_download():
         with tempfile.TemporaryDirectory() as temp_dir:
             test_data_path = Path(temp_dir) / "test_download"
             
-            print(f"📁 Test data path: {test_data_path}")
+            print(f" Test data path: {test_data_path}")
             
             # Test download function (will download actual files)
-            print("⬇️  Attempting to download dataset files...")
+            print("  Attempting to download dataset files...")
             download_babylm_data(
                 data_path=str(test_data_path),
                 dataset_type="cc_3M",
                 force_download=False
             )
             
-            print("✅ Download completed successfully")
+            print(" Download completed successfully")
             
             # Verify files exist
             required_files = [
@@ -47,13 +47,13 @@ def test_dataset_download():
                 filepath = test_data_path / filename
                 if filepath.exists():
                     size_mb = filepath.stat().st_size / (1024 * 1024)
-                    print(f"✅ {filename}: {size_mb:.1f} MB")
+                    print(f" {filename}: {size_mb:.1f} MB")
                 else:
-                    print(f"❌ {filename}: Not found")
+                    print(f" {filename}: Not found")
                     return False
             
             # Test dataset loading with actual data
-            print("📚 Testing dataset loading with downloaded data...")
+            print(" Testing dataset loading with downloaded data...")
             dataset = BabyLMMultiModalDataset(
                 data_path=str(test_data_path),
                 tokenizer_name="bert-base-uncased",
@@ -62,7 +62,7 @@ def test_dataset_download():
                 auto_download=False  # Already downloaded
             )
             
-            print(f"✅ Dataset loaded: {len(dataset)} samples")
+            print(f" Dataset loaded: {len(dataset)} samples")
             
             # Test loading a few samples
             for i in range(min(3, len(dataset))):
@@ -75,7 +75,7 @@ def test_dataset_download():
             return True
             
     except Exception as e:
-        print(f"❌ Dataset download test failed: {e}")
+        print(f" Dataset download test failed: {e}")
         return False
 
 def test_model_with_real_data():
@@ -108,7 +108,7 @@ def test_model_with_real_data():
             train_loader = data_module.train_dataloader()
             batch = next(iter(train_loader))
             
-            print(f"✅ Real data batch loaded:")
+            print(f" Real data batch loaded:")
             print(f"  - Batch size: {batch['input_ids'].shape[0]}")
             print(f"  - Sequence length: {batch['input_ids'].shape[1]}")
             print(f"  - Vision embedding shape: {batch['vision_embedding'].shape}")
@@ -146,21 +146,21 @@ def test_model_with_real_data():
                     labels=batch['labels']
                 )
             
-            print(f"✅ Model forward pass with real data successful:")
+            print(f" Model forward pass with real data successful:")
             print(f"  - Loss: {outputs['loss']:.4f}")
             print(f"  - Logits shape: {outputs['logits'].shape}")
             
             return True
             
     except Exception as e:
-        print(f"❌ Model with real data test failed: {e}")
+        print(f" Model with real data test failed: {e}")
         return False
 
 def main():
     """Main test function"""
     print("🧪 Real Dataset Compatibility Test")
     print("=" * 50)
-    print("⚠️  Note: This will download actual dataset files (may take time)")
+    print("  Note: This will download actual dataset files (may take time)")
     
     response = input("Continue with download test? (y/n): ")
     if response.lower() != 'y':
@@ -169,7 +169,7 @@ def main():
     
     # Set CPU mode
     torch.set_num_threads(4)
-    print(f"🔧 Using CPU with {torch.get_num_threads()} threads")
+    print(f" Using CPU with {torch.get_num_threads()} threads")
     
     tests = [
         ("Dataset Download Test", test_dataset_download),
@@ -180,25 +180,25 @@ def main():
     failed = 0
     
     for test_name, test_func in tests:
-        print(f"\n📋 Running {test_name}...")
+        print(f"\n Running {test_name}...")
         try:
             if test_func():
-                print(f"✅ {test_name} PASSED")
+                print(f" {test_name} PASSED")
                 passed += 1
             else:
-                print(f"❌ {test_name} FAILED")
+                print(f" {test_name} FAILED")
                 failed += 1
         except Exception as e:
-            print(f"❌ {test_name} FAILED with exception: {e}")
+            print(f" {test_name} FAILED with exception: {e}")
             failed += 1
     
     print("\n" + "=" * 50)
-    print(f"📊 Test Results: {passed} passed, {failed} failed")
+    print(f" Test Results: {passed} passed, {failed} failed")
     
     if failed == 0:
-        print("🎉 Dataset compatibility verified! Ready for RunPod training.")
+        print(" Dataset compatibility verified! Ready for RunPod training.")
     else:
-        print("⚠️  Issues found. Please check the errors above.")
+        print("  Issues found. Please check the errors above.")
 
 if __name__ == "__main__":
     main()

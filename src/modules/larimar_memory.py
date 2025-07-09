@@ -9,8 +9,8 @@ EPSILON = 1e-6
 
 class TinyLarimarMemory(nn.Module):
     """
-    Simplified memory module adapted from original Larimar for Tiny-MultiModal-Larimar.
-    This provides episodic memory capabilities for multimodal learning.
+    Simplified memory module adapted from original Larimar architecture.
+    Provides episodic memory capabilities for multimodal learning tasks.
     """
 
     def __init__(self,
