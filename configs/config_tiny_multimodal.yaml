@@ -58,6 +58,7 @@ data:
 
   # Data Type - BabyLM for fair comparison with Larimar
   data_type: "babylm"
+  dataset_type: "cc_3M" # Conceptual Captions 3M
   dataset_name: "cc_3M" # Conceptual Captions 3M
 
   # Processing (Optimal settings)
@@ -70,6 +71,9 @@ data:
   num_workers: 4
   pin_memory: true
   persistent_workers: true # Faster data loading
+
+  # Dataset split
+  train_split: 0.9 # 90% train, 10% validation
 
   # Data Augmentation (Novel enhancement)
   text_augmentation: true

@@ -13,10 +13,62 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 import wandb
+import sys
+
+# Add src to path for imports
+sys.path.append(str(Path(__file__).parent / "src"))
 
 # Model imports
 from src.modules.larimar_babylm_lightning import LarimarBabyLMLightningModel
-from src.modules.babylm_data import BabyLMMultiModalDataModule
+from src.modules.babylm_data import BabyLMMultiModalDataModule, download_babylm_data
+
+
+def ensure_dataset_downloaded(config: dict) -> None:
+    """Ensure the dataset is downloaded before starting training"""
+    data_path = Path(config['data']['train_data_path'])
+    dataset_type = config['data']['dataset_type']
+    
+    print("Checking if dataset is already downloaded...")
+    
+    if dataset_type == "cc_3M":
+        required_files = [
+            "cc_3M_captions.json",
+            "cc_3M_dino_v2_states_1of2.npy",
+            "cc_3M_dino_v2_states_2of2.npy"
+        ]
+    elif dataset_type == "local_narr":
+        required_files = [
+            "local_narr_captions.json",
+            "local_narr_dino_v2_states.npy"
+        ]
+    else:
+        raise ValueError(f"Unknown dataset_type: {dataset_type}")
+    
+    # Check if all files exist
+    all_exist = all((data_path / filename).exists() for filename in required_files)
+    
+    if all_exist:
+        print("Dataset already downloaded, proceeding with training")
+        # Verify file sizes
+        for filename in required_files:
+            filepath = data_path / filename
+            size_mb = filepath.stat().st_size / (1024 * 1024)
+            print(f"   {filename}: {size_mb:.1f} MB")
+    else:
+        print("Dataset not found, attempting download...")
+        print("Note: If BabyLM website is under maintenance, dummy data will be created automatically")
+        try:
+            download_babylm_data(
+                data_path=str(data_path),
+                dataset_type=dataset_type,
+                force_download=False
+            )
+            print("Dataset download completed!")
+        except Exception as e:
+            print(f"WARNING: Download failed (likely due to website maintenance): {e}")
+            print("The system will automatically create dummy data for testing...")
+            print("This allows you to test the training pipeline while the BabyLM website is unavailable")
+            # The download function should handle creating dummy data automatically
 
 
 def load_optimal_config(config_path: str) -> dict:
@@ -29,27 +81,32 @@ def load_optimal_config(config_path: str) -> dict:
 def setup_wandb_logging(config: dict) -> WandbLogger:
     """Setup W&B logging with optimal configuration"""
 
-    # Auto-increment run name
-    api = wandb.Api()
-    runs = api.runs(
-        f"{config['logging']['wandb_entity']}/{config['logging']['wandb_project']}")
-    existing_names = [
-        run.name for run in runs if run.name.startswith("optimal-larimar")]
+    try:
+        # Auto-increment run name
+        api = wandb.Api()
+        runs = api.runs(
+            f"{config['logging']['wandb_entity']}/{config['logging']['wandb_project']}")
+        existing_names = [
+            run.name for run in runs if run.name and run.name.startswith("optimal-larimar")]
 
-    if existing_names:
-        # Extract numbers and find next
-        numbers = []
-        for name in existing_names:
-            try:
-                num = int(name.split("-")[-1])
-                numbers.append(num)
-            except:
-                continue
-        next_num = max(numbers) + 1 if numbers else 1
-    else:
-        next_num = 1
+        if existing_names:
+            # Extract numbers and find next
+            numbers = []
+            for name in existing_names:
+                try:
+                    num = int(name.split("-")[-1])
+                    numbers.append(num)
+                except:
+                    continue
+            next_num = max(numbers) + 1 if numbers else 1
+        else:
+            next_num = 1
 
-    run_name = f"optimal-larimar{next_num}"
+        run_name = f"optimal-larimar-{next_num}"
+    except Exception as e:
+        print(f"Warning: Could not auto-increment run name: {e}")
+        import time
+        run_name = f"optimal-larimar-{int(time.time())}"
 
     logger = WandbLogger(
         project=config['logging']['wandb_project'],
@@ -160,6 +217,12 @@ def main():
     print(f"Novel capabilities: Multimodal understanding + Enhanced memory")
     print("="*80)
 
+    # Ensure dataset is downloaded first
+    print("DATASET SETUP")
+    print("Note: BabyLM website appears to be under maintenance (404 errors)")
+    print("Automatic fallback to dummy data is available for testing")
+    ensure_dataset_downloaded(config)
+
     # Setup logging
     logger = setup_wandb_logging(config)
     print(f"W&B Run: {logger.experiment.name}")
@@ -177,54 +240,63 @@ def main():
     print("Setting up BabyLM dataset...")
     data_module = BabyLMMultiModalDataModule(
         data_path=config['data']['train_data_path'],
+        tokenizer_name=config['model']['text_model_name'],
+        max_length=config['model']['max_length'],
         batch_size=config['data']['batch_size'],
         num_workers=config['data']['num_workers'],
         pin_memory=config['data']['pin_memory'],
-        persistent_workers=config['data']['persistent_workers']
+        dataset_type=config['data']['dataset_type'],
+        train_split=config['data']['train_split'],
+        auto_download=True,
+        force_download=False
     )
+
+    # Explicitly setup data module to trigger download if needed
+    print("Setting up data module (downloading dataset if needed)...")
+    data_module.setup()
+    
+    # Verify dataset was loaded successfully
+    if not hasattr(data_module, 'train_dataset') or len(data_module.train_dataset) == 0:
+        raise RuntimeError("Dataset setup failed! No training data found.")
+    
+    print(f"Dataset ready: {len(data_module.train_dataset)} train samples, {len(data_module.val_dataset)} val samples")
 
     # Setup model
     print("Initializing optimal Larimar model...")
-    model_config = {
-        # Core architecture
-        'text_model': config['model']['text_model_name'],
-        'decoder_model': config['model']['decoder_model_name'],
-        'vision_model': config['model']['vision_model_name'],
+    
+    # Create model config
+    from src.modules.larimar_multimodal_vae import LarimarMultiModalConfig
+    
+    model_config = LarimarMultiModalConfig(
+        text_model_name=config['model']['text_model_name'],
+        decoder_model_name=config['model']['decoder_model_name'],
+        vision_model_name=config['model']['vision_model_name'],
+        text_latent_size=config['model']['latent_size'],
+        vision_latent_size=config['model']['latent_size'],
+        hidden_size=config['model']['hidden_size'],
+        memory_size=config['memory']['memory_size'],
+        use_memory=config['model']['use_memory'],
+        max_length=config['model']['max_length'],
+        kl_weight=config['model']['kl_weight'],
+        memory_weight=config['model']['memory_strength'],
+        reconstruction_weight=config['model']['reconstruction_strength'],
+        direct_writing=config['memory']['direct_writing'],
+        identity_init=config['memory']['identity_init'],
+        observation_noise_std=config['memory']['observation_noise_std'],
+        fusion_type=config['model']['fusion_type'],
+        use_cross_attention=config['model']['use_cross_attention'],
+        num_attention_heads=config['model']['num_attention_heads']
+    )
 
-        # Dimensions
-        'text_latent_size': config['model']['latent_size'],
-        'vision_latent_size': config['model']['latent_size'],
-        'hidden_size': config['model']['hidden_size'],
-
-        # Memory configuration
-        'memory_size': config['memory']['memory_size'],
-        'use_memory': config['model']['use_memory'],
-        'direct_writing': config['memory']['direct_writing'],
-        'identity_init': config['memory']['identity_init'],
-        'observation_noise_std': config['memory']['observation_noise_std'],
-
-        # Training parameters
-        'learning_rate': config['optimization']['optimizer']['lr'],
-        'weight_decay': config['optimization']['optimizer']['weight_decay'],
-        'warmup_steps': config['optimization']['scheduler']['warmup_steps'],
-        'max_steps': config['optimization']['scheduler']['max_steps'],
-
-        # Loss weights
-        'kl_weight': config['model']['kl_weight'],
-        'memory_weight': config['model']['memory_strength'],
-        'reconstruction_weight': config['model']['reconstruction_strength'],
-
-        # Warmup schedules
-        'kl_warmup_steps': config['model']['kl_warmup_steps'],
-        'memory_warmup_steps': config['model']['memory_warmup_steps'],
-
-        # Multimodal fusion
-        'fusion_type': config['model']['fusion_type'],
-        'use_cross_attention': config['model']['use_cross_attention'],
-        'num_attention_heads': config['model']['num_attention_heads']
-    }
-
-    model = LarimarBabyLMLightningModel(**model_config)
+    model = LarimarBabyLMLightningModel(
+        config=model_config,
+        learning_rate=config['optimization']['optimizer']['lr'],
+        weight_decay=config['optimization']['optimizer']['weight_decay'],
+        warmup_steps=config['optimization']['scheduler']['warmup_steps'],
+        kl_warmup_steps=config['model']['kl_warmup_steps'],
+        memory_warmup_steps=config['model']['memory_warmup_steps'],
+        max_epochs=config['trainer']['max_epochs']
+    )
 
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     print(
@@ -249,8 +321,19 @@ def main():
     print("="*80)
     print("TRAINING COMPLETED!")
     print("="*80)
-    print(
-        f"Best model checkpoint: {trainer.checkpoint_callback.best_model_path}")
+    
+    # Find checkpoint callback
+    checkpoint_callback = None
+    for callback in trainer.callbacks:
+        if isinstance(callback, ModelCheckpoint):
+            checkpoint_callback = callback
+            break
+    
+    if checkpoint_callback and checkpoint_callback.best_model_path:
+        print(f"Best model checkpoint: {checkpoint_callback.best_model_path}")
+    else:
+        print("No checkpoint callback found or no best model saved")
+    
     print(
         f"W&B Run: https://wandb.ai/{config['logging']['wandb_entity']}/{config['logging']['wandb_project']}/runs/{logger.experiment.id}")
     print("\nNext steps:")

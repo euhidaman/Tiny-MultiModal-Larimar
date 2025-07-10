@@ -397,10 +397,14 @@ class LarimarMultiModalConfig:
                  # Latent dimensions
                  text_latent_size: int = 384,
                  vision_latent_size: int = 384,
+                 hidden_size: int = 768,
 
                  # Memory settings
                  memory_size: int = 512,
                  use_memory: bool = True,
+                 direct_writing: bool = True,
+                 identity_init: bool = True,
+                 observation_noise_std: float = 0.1,
 
                  # Training settings
                  max_length: int = 512,
@@ -409,20 +413,32 @@ class LarimarMultiModalConfig:
                  # Loss weights
                  kl_weight: float = 1.0,
                  memory_weight: float = 1.0,
-                 reconstruction_weight: float = 1.0):
+                 reconstruction_weight: float = 1.0,
+
+                 # Multimodal fusion
+                 fusion_type: str = "cross_attention",
+                 use_cross_attention: bool = True,
+                 num_attention_heads: int = 12):
 
         self.text_model_name = text_model_name
         self.vision_model_name = vision_model_name
         self.decoder_model_name = decoder_model_name
         self.text_latent_size = text_latent_size
         self.vision_latent_size = vision_latent_size
+        self.hidden_size = hidden_size
         self.memory_size = memory_size
         self.use_memory = use_memory
+        self.direct_writing = direct_writing
+        self.identity_init = identity_init
+        self.observation_noise_std = observation_noise_std
         self.max_length = max_length
         self.vocab_size = vocab_size
         self.kl_weight = kl_weight
         self.memory_weight = memory_weight
         self.reconstruction_weight = reconstruction_weight
+        self.fusion_type = fusion_type
+        self.use_cross_attention = use_cross_attention
+        self.num_attention_heads = num_attention_heads
 
     def to_dict(self):
         return self.__dict__

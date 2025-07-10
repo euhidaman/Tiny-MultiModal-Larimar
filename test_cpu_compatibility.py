@@ -18,7 +18,7 @@ sys.path.append(str(Path(__file__).parent / "src"))
 
 def test_imports():
     """Test if all modules can be imported"""
-    print("📦 Testing imports...")
+    print("Testing imports...")
     
     try:
         from src.modules.larimar_text_encoder import LarimarTextEncoder, BertForLatentConnector
