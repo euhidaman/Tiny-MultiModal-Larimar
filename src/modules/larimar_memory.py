@@ -222,29 +222,33 @@ class TinyLarimarMemory(nn.Module):
             w = self.solve_attention_weights(
                 z_noisy, prior_memory[0], pseudoinverse=True)
 
-            # Approximate pseudoinverse for stable update
-            # w is [episode_size, batch_size, memory_size]
-            # We need to transpose to [batch_size, episode_size, memory_size] for bmm
-            w_permuted = w.transpose(0, 1)  # [batch_size, episode_size, memory_size]
+            # w is [episode_size, batch_size, memory_size] = [3, 2, 512]
+            # We need to compute new_memory_mean as [batch_size, memory_size, code_size]
             
-            # Check if we need pseudoinverse (only if episode_size != memory_size)
-            if episode_size != self.memory_size:
-                w_pseudo_inv = self.approx_pseudoinverse(
-                    w_permuted, steps=self.pseudoinverse_steps)
-            else:
-                # If dimensions match, try to use direct inverse
+            # Simple approach: use least squares for each batch separately
+            new_memory_means = []
+            for b in range(batch_size):
+                # Extract tensors for this batch: w[:, b, :] = [episode_size, memory_size] = [3, 512]
+                w_batch = w[:, b, :]  # [episode_size, memory_size]
+                z_batch = z_noisy[:, b, :]  # [episode_size, code_size]
+                
+                # Solve: w_batch^T @ memory_mean = z_batch^T
+                # memory_mean = (w_batch @ w_batch^T)^{-1} @ w_batch @ z_batch
+                # which is memory_mean = w_batch^+ @ z_batch where w_batch^+ is pseudoinverse
+                
                 try:
-                    w_pseudo_inv = torch.inverse(w_permuted)
+                    # Use PyTorch's pinverse for numerical stability
+                    w_pinv = torch.pinverse(w_batch)  # [memory_size, episode_size]
+                    memory_mean_batch = torch.mm(w_pinv, z_batch)  # [memory_size, code_size]
                 except:
-                    # Fallback to pseudoinverse
-                    w_pseudo_inv = self.approx_pseudoinverse(
-                        w_permuted, steps=self.pseudoinverse_steps)
-
-            # Update memory mean
-            # [batch_size, episode_size, code_size]
-            z_permuted = z_noisy.transpose(0, 1)
-            # [batch_size, memory_size, code_size] = [batch_size, episode_size, memory_size]^T @ [batch_size, episode_size, code_size]
-            new_memory_mean = torch.bmm(w_pseudo_inv.transpose(1, 2), z_permuted)
+                    # Fallback: use transpose as approximation
+                    w_t = w_batch.transpose(0, 1)  # [memory_size, episode_size]
+                    memory_mean_batch = torch.mm(w_t, z_batch) / episode_size  # [memory_size, code_size]
+                
+                new_memory_means.append(memory_mean_batch)
+            
+            # Stack batch results: [batch_size, memory_size, code_size]
+            new_memory_mean = torch.stack(new_memory_means, dim=0)
 
             posterior_memory = (new_memory_mean, prior_memory[1])
         else:
