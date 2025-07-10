@@ -1,22 +1,43 @@
+# Core ML frameworks
 torch
+torchvision
+torchaudio
 transformers
 lightning
-sentence-transformers
-timm
-pillow
+datasets
+
+# Scientific computing
 numpy
-nltk
-boto3
-sacremoses
-tensorboard
-jupyterlab
 scipy
 scikit-learn
-jsonargparse[signatures]
-spacy
 pandas
-datasets
-accelerate
-wandb
-torchvision
+
+# Image processing and vision
+pillow
+timm
 einops
+
+# Text processing
+nltk
+sentence-transformers
+spacy
+sacremoses
+
+# Utilities and data handling
+tqdm
+requests
+jsonlines
+pyyaml
+boto3
+jsonargparse[signatures]
+
+# Logging and monitoring
+wandb
+tensorboard
+weave
+
+# Development and notebooks
+jupyterlab
+
+# Training acceleration
+accelerate

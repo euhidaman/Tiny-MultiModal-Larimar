@@ -2,7 +2,7 @@
 
 A compact multimodal AI model combining **authentic Larimar** text processing with **DiNOv2** vision encoding and **episodic memory**. Designed for efficient CPU testing and GPU training.
 
-## Architecture
+## 🏗️ Architecture
 
 **Authentic Larimar Components + DiNOv2 Vision:**
 
@@ -28,7 +28,7 @@ DiNOv2 Features → Vision Encoder → Vision Latent (384D)
 - **Fusion**: Cross-attention between text and vision features
 - **Parameters**: ~300M total (CPU testable, GPU trainable)
 
-## Installation
+## 📦 Installation
 
 ```bash
 # Clone repository and install dependencies
@@ -38,7 +38,7 @@ pip install torch torchvision lightning transformers
 pip install datasets accelerate wandb tensorboard
 ```
 
-## Data Structure
+## 🗂️ Data Structure
 
 Expected data format:
 
@@ -50,7 +50,7 @@ data/babylm/
 └── local_narr_captions.json         # Optional: Local Narratives
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Test Integration (CPU)
 
@@ -74,7 +74,7 @@ python train_larimar_babylm.py --config configs/config_larimar_babylm.yaml
 tensorboard --logdir outputs/
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 Key settings in `configs/config_larimar_babylm.yaml`:
 
@@ -96,7 +96,7 @@ learning_rate: 1e-4
 max_epochs: 10
 ```
 
-## Model Components
+## 🔧 Model Components
 
 ### Authentic Larimar Text Processing
 
@@ -123,7 +123,7 @@ max_epochs: 10
 - **VAE framework** with reparameterization trick
 - **Progressive loss scheduling** (KL annealing)
 
-## Performance
+## 📊 Performance
 
 | Component         | Size      | Description                 |
 | ----------------- | --------- | --------------------------- |
@@ -133,7 +133,7 @@ max_epochs: 10
 | Memory Module     | ~2M       | 512 slots × 384D            |
 | **Total**         | **~240M** | CPU testable, GPU trainable |
 
-## Hardware Requirements
+## 🛠️ Hardware Requirements
 
 ### CPU Testing
 
@@ -156,7 +156,7 @@ max_epochs: 10
 --memory_size 256
 ```
 
-## Troubleshooting
+## 🔍 Troubleshooting
 
 ### Common Issues
 
@@ -196,7 +196,7 @@ memory_warmup_steps: 5000
 kl_weight: 0.5
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```text
 Tiny-MultiModal-Larimar/
@@ -215,7 +215,7 @@ Tiny-MultiModal-Larimar/
 └── README.md                        # This file
 ```
 
-## Testing
+## 🧪 Testing
 
 Run integration tests to verify everything works:
 
@@ -232,7 +232,7 @@ python test_larimar_integration.py
 # ✓ Lightning model working
 ```
 
-## Training Tips
+## 🎯 Training Tips
 
 ### For CPU Testing
 
@@ -262,17 +262,17 @@ python train_larimar_babylm.py \
 - **Memory Warmup**: Progressive memory loss integration  
 - **Learning Rate**: Different rates for encoder/decoder/memory
 
-## Data Sources
+## 🔗 Data Sources
 
 - **BabyLM Dataset**: https://babylm.github.io/
 - **Conceptual Captions**: Pre-computed DiNOv2 embeddings
 - **Local Narratives**: Optional additional data
 
-## License
+## 📄 License
 
 MIT License - see LICENSE file
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - **Larimar**: Original episodic memory architecture
 - **Meta AI**: DiNOv2 vision encoder
@@ -280,4 +280,4 @@ MIT License - see LICENSE file
 
 ---
 
-**Ready to train authentic Larimar with DiNOv2 vision!**
+**Ready to train authentic Larimar with DiNOv2 vision!** 🚀

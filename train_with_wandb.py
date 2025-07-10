@@ -22,7 +22,7 @@ def get_next_run_number():
             run_number += 1
         return run_number
     except Exception as e:
-        print(f"  Could not connect to W&B API: {e}")
+        print(f"⚠️  Could not connect to W&B API: {e}")
         print("Using default run number: 1")
         return 1
 
@@ -32,7 +32,7 @@ def main():
     run_number = get_next_run_number()
     run_name = f"baby-larimar{run_number}"
 
-    print(f" Starting training run: {run_name}")
+    print(f"🚀 Starting training run: {run_name}")
 
     # Build command
     cmd = [

@@ -278,7 +278,7 @@ def main():
         test_lightning_model()
 
         print("\n" + "=" * 60)
-        print(" All tests passed! The Larimar integration is working correctly.")
+        print("✅ All tests passed! The Larimar integration is working correctly.")
         print("=" * 60)
 
         # Print summary
@@ -292,7 +292,7 @@ def main():
         print("\nReady to train with: python train_larimar_babylm.py --config configs/config_larimar_babylm.yaml")
 
     except Exception as e:
-        print(f"\n Test failed with error: {e}")
+        print(f"\n❌ Test failed with error: {e}")
         import traceback
         traceback.print_exc()
         return False

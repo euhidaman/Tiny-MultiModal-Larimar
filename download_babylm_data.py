@@ -25,8 +25,8 @@ def main():
 
     args = parser.parse_args()
 
-    print(f" Downloading BabyLM multimodal dataset ({args.dataset_type})...")
-    print(f" Data path: {args.data_path}")
+    print(f"🚀 Downloading BabyLM multimodal dataset ({args.dataset_type})...")
+    print(f"📁 Data path: {args.data_path}")
 
     try:
         download_babylm_data(
@@ -34,9 +34,9 @@ def main():
             dataset_type=args.dataset_type,
             force_download=args.force
         )
-        print(" Download complete!")
+        print("✅ Download complete!")
     except Exception as e:
-        print(f" Download failed: {e}")
+        print(f"❌ Download failed: {e}")
         sys.exit(1)
 
 

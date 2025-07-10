@@ -11,8 +11,8 @@ from .vision_encoder import DiNOv2VisionEncoder
 
 class LarimarMultiModalVAE(nn.Module):
     """
-    Multimodal VAE combining Larimar text components with DiNOv2 vision.
-    Main model for Tiny-MultiModal-Larimar using authentic Larimar architecture.
+    Multimodal VAE combining Larimar text components with DiNOv2 vision encoder.
+    This is the main model for Tiny-MultiModal-Larimar using authentic Larimar architecture.
     """
 
     def __init__(self,

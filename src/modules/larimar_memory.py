@@ -9,8 +9,8 @@ EPSILON = 1e-6
 
 class TinyLarimarMemory(nn.Module):
     """
-    Simplified memory module adapted from original Larimar architecture.
-    Provides episodic memory capabilities for multimodal learning tasks.
+    Simplified memory module adapted from original Larimar for Tiny-MultiModal-Larimar.
+    This provides episodic memory capabilities for multimodal learning.
     """
 
     def __init__(self,
@@ -311,38 +311,15 @@ class TinyLarimarMemory(nn.Module):
         """
         batch_size, m, n = A.shape
 
-        # Use a more stable approximation method
-        # For overdetermined systems (m > n), use A^T(AA^T)^{-1}
-        # For underdetermined systems (m < n), use (A^TA)^{-1}A^T
+        # Initialize with transpose
+        A_pinv = A.transpose(1, 2)  # [batch_size, n, m]
 
-        if m >= n:
-            # Overdetermined case: A^T(AA^T)^{-1}
-            AAT = torch.bmm(A, A.transpose(1, 2))  # [batch_size, m, m]
-            # Add small regularization for numerical stability
-            AAT = AAT + 1e-6 * \
-                torch.eye(m, device=A.device, dtype=A.dtype).unsqueeze(
-                    0).expand(batch_size, -1, -1)
-            try:
-                AAT_inv = torch.inverse(AAT)  # [batch_size, m, m]
-                # [batch_size, n, m]
-                A_pinv = torch.bmm(A.transpose(1, 2), AAT_inv)
-            except RuntimeError:
-                # Fallback to transpose if inverse fails
-                A_pinv = A.transpose(1, 2) / (m * n)
-        else:
-            # Underdetermined case: (A^TA)^{-1}A^T
-            ATA = torch.bmm(A.transpose(1, 2), A)  # [batch_size, n, n]
-            # Add small regularization for numerical stability
-            ATA = ATA + 1e-6 * \
-                torch.eye(n, device=A.device, dtype=A.dtype).unsqueeze(
-                    0).expand(batch_size, -1, -1)
-            try:
-                ATA_inv = torch.inverse(ATA)  # [batch_size, n, n]
-                # [batch_size, n, m]
-                A_pinv = torch.bmm(ATA_inv, A.transpose(1, 2))
-            except RuntimeError:
-                # Fallback to transpose if inverse fails
-                A_pinv = A.transpose(1, 2) / (m * n)
+        # Iterative refinement
+        for _ in range(steps):
+            # A_pinv = A_pinv - A_pinv @ A @ A_pinv + A_pinv
+            AAinv = torch.bmm(A, A_pinv)  # [batch_size, m, m]
+            A_pinv = A_pinv - \
+                torch.bmm(A_pinv, torch.bmm(AAinv, A_pinv)) + A_pinv
 
         return A_pinv
 
