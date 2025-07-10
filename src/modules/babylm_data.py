@@ -129,7 +129,7 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
     # Test connectivity first
     if not test_babylm_connectivity():
         logger.warning("BabyLM website appears to be inaccessible. Testing connectivity...")
-        logger.warning("If you need to train immediately, dummy data will be created as fallback.")
+        logger.warning("Please check your internet connection and try again later.")
     else:
         logger.info("BabyLM website is accessible, proceeding with download...")
 
@@ -160,192 +160,26 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
         logger.error(f"Failed to download {len(download_errors)} files:")
         for filename, error in download_errors:
             logger.error(f"  {filename}: {error}")
-
+        
         # Check if we already have some files
         existing_files = [f for f in required_files if (data_path / f).exists()]
-
+        
         if len(existing_files) == 0:
-            logger.warning("No files downloaded successfully. Creating minimal dummy data for testing...")
-            logger.warning("IMPORTANT: This is dummy data only suitable for testing the pipeline!")
-            create_dummy_data(data_path, dataset_type)
+            raise RuntimeError(f"No files downloaded successfully. Please check your internet connection and try again.")
         else:
-            logger.error(f"Only {len(existing_files)}/{len(required_files)} files available. Training may fail.")
-            # Don't fall back to dummy data if we have partial real data
-            raise RuntimeError(f"Incomplete dataset: missing {len(download_errors)} required files")
+            raise RuntimeError(f"Incomplete dataset: missing {len(download_errors)} required files. Please ensure all files are downloaded.")
     else:
         logger.info(f"All {len(required_files)} files downloaded successfully!")
 
     logger.info(f"Dataset setup complete for {dataset_type}")
 
 
-def create_dummy_data(data_path: Path, dataset_type: str = "cc_3M"):
-    """Create minimal dummy data for testing when downloads fail"""
-    logger.warning("="*60)
-    logger.warning("CREATING DUMMY DATA FOR TESTING ONLY")
-    logger.warning("This is NOT real BabyLM data!")
-    logger.warning("Download real data from https://data.babylm.github.io/multimodal/")
-    logger.warning("="*60)
-
-    if dataset_type == "cc_3M":
-        # Create dummy captions
-        dummy_captions = [
-            {"caption": "A small brown dog sits on green grass"},
-            {"caption": "A red car drives down a busy street"},
-            {"caption": "Children play in a colorful playground"},
-            {"caption": "A white cat sleeps on a soft couch"},
-            {"caption": "Mountains rise behind a clear blue lake"}
-        ] * 100  # 500 samples
-
-        with open(data_path / "cc_3M_captions.json", 'w') as f:
-            json.dump(dummy_captions, f)
-
-        # Create dummy DiNOv2 embeddings (768-dimensional for DiNOv2-base)
-        dummy_embeddings_1 = np.random.normal(
-            0, 0.5, (250, 768)).astype(np.float32)
-        dummy_embeddings_2 = np.random.normal(
-            0, 0.5, (250, 768)).astype(np.float32)
-
-        np.save(data_path / "cc_3M_dino_v2_states_1of2.npy", dummy_embeddings_1)
-        np.save(data_path / "cc_3M_dino_v2_states_2of2.npy", dummy_embeddings_2)
-
-        logger.info("Created dummy cc_3M dataset with 500 samples")
-
-    elif dataset_type == "local_narr":
-        # Create dummy captions for local narratives
-        dummy_captions = [
-            {"caption": "Person walks across the room slowly"},
-            {"caption": "Hand reaches for the blue object"},
-            {"caption": "Camera pans left to show the window"}
-        ] * 50  # 150 samples
-
-        with open(data_path / "local_narr_captions.json", 'w') as f:
-            json.dump(dummy_captions, f)
-
-        # Create dummy DiNOv2 embeddings (768-dimensional)
-        dummy_embeddings = np.random.normal(
-            0, 0.5, (150, 768)).astype(np.float32)
-        np.save(data_path / "local_narr_dino_v2_states.npy", dummy_embeddings)
-
-        logger.info("Created dummy local_narr dataset with 150 samples")
-
-    # Create a readme file explaining the dummy data
-    readme_content = f"""
-# Dummy Dataset Notice
-
-This directory contains dummy data created automatically because the original
-BabyLM multimodal dataset could not be downloaded.
-
-## What's in the dummy data:
-- Synthetic captions (repeated patterns)
-- Random DiNOv2 embeddings (384-dimensional)
-- Compatible with the training pipeline for testing
-
-## To use real data:
-1. Manually download the files from:
-   - https://data.babylm.github.io/multimodal/
-2. Replace the dummy files with real ones
-3. Re-run training
-
-Dataset type: {dataset_type}
-Created automatically by Tiny-MultiModal-Larimar
-"""
-
-    with open(data_path / "README_DUMMY_DATA.txt", 'w') as f:
-        f.write(readme_content)
-
-    logger.warning("="*60)
-    logger.warning("DUMMY DATA CREATED - NOT SUITABLE FOR REAL TRAINING!")
-    logger.warning("Please download real BabyLM data for actual model training")
-    logger.warning("="*60)
+# Dummy data creation functions removed - no fallback to dummy data
+# Real dataset download is required for training
 
 
-def create_dummy_babylm_data(data_path: Path, dataset_type: str = "cc_3M"):
-    """Create dummy BabyLM data for testing when real data isn't available (e.g., during website maintenance)"""
-    logger.info(
-        f"Creating dummy {dataset_type} data for testing/development...")
-    logger.info(
-        "This allows you to test the training pipeline while the BabyLM website is under maintenance")
-
-    data_path.mkdir(parents=True, exist_ok=True)
-
-    if dataset_type == "cc_3M":
-        # Create dummy captions with realistic content
-        dummy_captions = []
-        sample_captions = [
-            "A red car driving down a busy street in the city",
-            "Children playing soccer in a green park on a sunny day",
-            "A cat sitting on a windowsill looking outside",
-            "People walking across a bridge over a river",
-            "A dog running on the beach near ocean waves",
-            "A person reading a book under a tree in summer",
-            "Birds flying over mountains covered in snow",
-            "A train traveling through a countryside landscape",
-            "Students studying together in a library",
-            "A chef cooking delicious food in a restaurant kitchen",
-            "Flowers blooming in a beautiful garden during spring",
-            "A lighthouse standing tall on a rocky coastline",
-            "Children building sandcastles on a sandy beach",
-            "A cyclist riding through a forest trail",
-            "Musicians performing on stage at a concert"
-        ]
-
-        # Create 1000 dummy samples by repeating and varying the base captions
-        for i in range(1000):
-            base_caption = sample_captions[i % len(sample_captions)]
-            # Add some variation to make it more realistic
-            variations = [
-                f"Photo of {base_caption.lower()}",
-                f"Image showing {base_caption.lower()}",
-                f"Picture of {base_caption.lower()}",
-                base_caption,
-                f"Scene with {base_caption.lower()}",
-                f"View of {base_caption.lower()}"
-            ]
-            dummy_captions.append({"caption": variations[i % len(variations)]})
-
-        # Save captions
-        captions_file = data_path / "cc_3M_captions.json"
-        with open(captions_file, 'w', encoding='utf-8') as f:
-            json.dump(dummy_captions, f, indent=2)
-        logger.info(f"Created {len(dummy_captions)} dummy captions")
-
-        # Create dummy DiNOv2 embeddings (768 dimensions for DiNOv2-base)
-        embedding_dim = 768  # DiNOv2-base embedding dimension
-        # Use a more realistic distribution (closer to actual DiNOv2 outputs)
-        embeddings1 = np.random.normal(
-            0, 0.5, (500, embedding_dim)).astype(np.float32)
-        embeddings2 = np.random.normal(
-            0, 0.5, (500, embedding_dim)).astype(np.float32)
-
-        np.save(data_path / "cc_3M_dino_v2_states_1of2.npy", embeddings1)
-        np.save(data_path / "cc_3M_dino_v2_states_2of2.npy", embeddings2)
-        logger.info(
-            f"Created dummy embeddings: {embeddings1.shape} + {embeddings2.shape}")
-
-    elif dataset_type == "local_narr":
-        # Create dummy local narratives data
-        dummy_captions = []
-        for i in range(500):
-            dummy_captions.append({
-                "caption": f"Local narrative {i+1}: A detailed scene description with various objects, people, and activities taking place in different environments"
-            })
-
-        captions_file = data_path / "local_narr_captions.json"
-        with open(captions_file, 'w', encoding='utf-8') as f:
-            json.dump(dummy_captions, f, indent=2)
-
-        # Create dummy embeddings with realistic distribution
-        embedding_dim = 768
-        embeddings = np.random.normal(
-            0, 0.5, (500, embedding_dim)).astype(np.float32)
-        np.save(data_path / "local_narr_dino_v2_states.npy", embeddings)
-        logger.info(
-            f"Created dummy local narratives data: {len(dummy_captions)} captions")
-
-    logger.info(
-        "Dummy data creation completed! You can now test the training pipeline.")
-    logger.info(
-        "Note: Replace with real data when the BabyLM website is back online.")
+# All dummy data creation functions have been removed
+# Only real dataset downloads are supported
 
 
 class BabyLMMultiModalDataset(Dataset):

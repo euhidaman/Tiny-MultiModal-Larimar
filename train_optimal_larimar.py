@@ -68,9 +68,10 @@ def ensure_dataset_downloaded(config: dict, force_download: bool = False) -> Non
             )
             print("Dataset download completed!")
         except Exception as e:
-            print(f"WARNING: Download failed: {e}")
-            print("Note: If the BabyLM website is temporarily unavailable, dummy data will be created automatically for testing")
-            # The download function should handle creating dummy data automatically
+            print(f"ERROR: Download failed: {e}")
+            print("Please check your internet connection and try again.")
+            print("The BabyLM dataset is required for training.")
+            raise RuntimeError(f"Dataset download failed: {e}")
 
 
 def load_optimal_config(config_path: str) -> dict:
