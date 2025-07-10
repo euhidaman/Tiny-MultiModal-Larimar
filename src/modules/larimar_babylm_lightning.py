@@ -303,13 +303,17 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
                 generated_texts.append(
                     f"Input: {text} -> Generated: {generated_text}")
 
-            # Log generated samples
+            # Log generated samples to W&B
             for i, gen_text in enumerate(generated_texts):
-                self.logger.experiment.add_text(
-                    f"Generated_Sample_{i}",
-                    gen_text,
-                    self.current_epoch
-                )
+                if hasattr(self.logger, 'experiment'):
+                    # For W&B logger
+                    if hasattr(self.logger.experiment, 'log'):
+                        self.logger.experiment.log({
+                            f"Generated_Sample_{i}": gen_text,
+                            "epoch": self.current_epoch
+                        })
+                    else:
+                        print(f"Generated Sample {i}: {gen_text}")
 
         except Exception as e:
             print(f"Error generating samples: {e}")
@@ -417,12 +421,15 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
         else:
             return optimizer
 
-    def lr_scheduler_step(self, scheduler, optimizer_idx, metric):
+    def lr_scheduler_step(self, scheduler, metric=None):
         """Step the learning rate scheduler"""
         if self.hparams.scheduler_type == "linear":
             scheduler.step()
         else:
-            super().lr_scheduler_step(scheduler, optimizer_idx, metric)
+            if metric is not None:
+                scheduler.step(metric)
+            else:
+                scheduler.step()
 
 
 def create_larimar_babylm_model(
