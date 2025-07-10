@@ -275,31 +275,31 @@ def main():
         text_model_name=config['model']['text_model_name'],
         decoder_model_name=config['model']['decoder_model_name'],
         vision_model_name=config['model']['vision_model_name'],
-        text_latent_size=config['model']['latent_size'],
-        vision_latent_size=config['model']['latent_size'],
-        hidden_size=config['model']['hidden_size'],
-        memory_size=config['memory']['memory_size'],
-        use_memory=config['model']['use_memory'],
-        max_length=config['model']['max_length'],
-        kl_weight=config['model']['kl_weight'],
-        memory_weight=config['model']['memory_strength'],
-        reconstruction_weight=config['model']['reconstruction_strength'],
-        direct_writing=config['memory']['direct_writing'],
-        identity_init=config['memory']['identity_init'],
-        observation_noise_std=config['memory']['observation_noise_std'],
+        text_latent_size=int(config['model']['latent_size']),
+        vision_latent_size=int(config['model']['latent_size']),
+        hidden_size=int(config['model']['hidden_size']),
+        memory_size=int(config['memory']['memory_size']),
+        use_memory=bool(config['model']['use_memory']),
+        max_length=int(config['model']['max_length']),
+        kl_weight=float(config['model']['kl_weight']),
+        memory_weight=float(config['model']['memory_strength']),
+        reconstruction_weight=float(config['model']['reconstruction_strength']),
+        direct_writing=bool(config['memory']['direct_writing']),
+        identity_init=bool(config['memory']['identity_init']),
+        observation_noise_std=float(config['memory']['observation_noise_std']),
         fusion_type=config['model']['fusion_type'],
-        use_cross_attention=config['model']['use_cross_attention'],
-        num_attention_heads=config['model']['num_attention_heads']
+        use_cross_attention=bool(config['model']['use_cross_attention']),
+        num_attention_heads=int(config['model']['num_attention_heads'])
     )
 
     model = LarimarBabyLMLightningModel(
         config=model_config,
-        learning_rate=config['optimization']['optimizer']['lr'],
-        weight_decay=config['optimization']['optimizer']['weight_decay'],
-        warmup_steps=config['optimization']['scheduler']['warmup_steps'],
-        kl_warmup_steps=config['model']['kl_warmup_steps'],
-        memory_warmup_steps=config['model']['memory_warmup_steps'],
-        max_epochs=config['trainer']['max_epochs']
+        learning_rate=float(config['optimization']['optimizer']['lr']),
+        weight_decay=float(config['optimization']['optimizer']['weight_decay']),
+        warmup_steps=int(config['optimization']['scheduler']['warmup_steps']),
+        kl_warmup_steps=int(config['model']['kl_warmup_steps']),
+        memory_warmup_steps=int(config['model']['memory_warmup_steps']),
+        max_epochs=int(config['trainer']['max_epochs'])
     )
 
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")

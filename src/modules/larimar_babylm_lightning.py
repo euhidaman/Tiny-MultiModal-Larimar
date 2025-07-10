@@ -318,6 +318,11 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
 
     def configure_optimizers(self):
         """Configure optimizers and schedulers"""
+        # Ensure learning_rate is float for mathematical operations
+        learning_rate = float(self.hparams.learning_rate)
+        weight_decay = float(self.hparams.weight_decay)
+        warmup_steps = int(self.hparams.warmup_steps)
+        
         # Separate parameters for different learning rates
         encoder_params = []
         decoder_params = []
@@ -337,24 +342,24 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
         # Create parameter groups with different learning rates
         param_groups = [
             # Lower LR for encoders
-            {'params': encoder_params, 'lr': self.hparams.learning_rate * 0.5},
-            {'params': decoder_params, 'lr': self.hparams.learning_rate},
+            {'params': encoder_params, 'lr': learning_rate * 0.5},
+            {'params': decoder_params, 'lr': learning_rate},
             # Higher LR for memory
-            {'params': memory_params, 'lr': self.hparams.learning_rate * 1.5},
-            {'params': fusion_params, 'lr': self.hparams.learning_rate}
+            {'params': memory_params, 'lr': learning_rate * 1.5},
+            {'params': fusion_params, 'lr': learning_rate}
         ]
 
         # Choose optimizer
         if self.hparams.optimizer_type == "adamw":
             optimizer = torch.optim.AdamW(
                 param_groups,
-                weight_decay=self.hparams.weight_decay,
+                weight_decay=weight_decay,
                 eps=1e-8
             )
         elif self.hparams.optimizer_type == "adam":
             optimizer = torch.optim.Adam(
                 param_groups,
-                weight_decay=self.hparams.weight_decay,
+                weight_decay=weight_decay,
                 eps=1e-8
             )
         else:
@@ -367,7 +372,7 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
             total_steps = self.trainer.estimated_stepping_batches
             scheduler = get_linear_schedule_with_warmup(
                 optimizer,
-                num_warmup_steps=self.hparams.warmup_steps,
+                num_warmup_steps=warmup_steps,
                 num_training_steps=total_steps
             )
 
