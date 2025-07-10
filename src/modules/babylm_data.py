@@ -9,6 +9,7 @@ from pathlib import Path
 import os
 import requests
 import zipfile
+import tarfile
 from tqdm import tqdm
 import logging
 import ssl
@@ -59,10 +60,21 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
     zip_path = data_path / "babylm_dataset.zip"
     
     try:
-        # Download the zip file
+        # Download the zip file with proper headers for OSF
         logger.info(f"Downloading from: {BABYLM_ZIP_URL}")
-        response = requests.get(BABYLM_ZIP_URL, stream=True, verify=False)
+        
+        # Add headers to handle OSF properly
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/zip, application/octet-stream, */*'
+        }
+        
+        response = requests.get(BABYLM_ZIP_URL, stream=True, verify=False, headers=headers, allow_redirects=True)
         response.raise_for_status()
+        
+        # Check if we actually got a zip file
+        content_type = response.headers.get('content-type', '')
+        logger.info(f"Content-Type: {content_type}")
         
         total_size = int(response.headers.get('content-length', 0))
         
@@ -79,39 +91,157 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
                         f.write(chunk)
                         pbar.update(len(chunk))
         
-        logger.info("Download completed, extracting files...")
+        logger.info("Download completed, checking file type...")
+        
+        # Check file size and first bytes for debugging
+        file_size = zip_path.stat().st_size
+        logger.info(f"Downloaded file size: {file_size / (1024*1024):.1f} MB")
+        
+        with open(zip_path, 'rb') as f:
+            first_bytes = f.read(50)
+            logger.info(f"File header (first 50 bytes): {first_bytes}")
+        
+        # Check if the downloaded file is actually a zip
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as test_zip:
+                file_list = test_zip.namelist()
+                file_count = len(file_list)
+                logger.info(f"Valid zip file with {file_count} files")
+                
+                # Log first few files for debugging
+                logger.info("First 10 files in zip:")
+                for i, filename in enumerate(file_list[:10]):
+                    info = test_zip.getinfo(filename)
+                    logger.info(f"  {i+1}. {filename} ({info.file_size} bytes)")
+                
+        except zipfile.BadZipFile as e:
+            logger.error(f"BadZipFile error: {e}")
+            
+            # Try to detect if it's HTML (redirect page)
+            try:
+                with open(zip_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    first_line = f.readline()
+                    if 'html' in first_line.lower():
+                        logger.error("Downloaded file appears to be HTML, not data")
+                        raise RuntimeError("Downloaded HTML instead of zip file - URL may be incorrect")
+            except:
+                pass
+            
+            # Try different extraction methods
+            logger.info("Trying alternative extraction methods...")
+            
+            # Try with tarfile (in case it's a tar.gz)
+            import tarfile
+            try:
+                with tarfile.open(zip_path, 'r:*') as tar:
+                    tar_files = tar.getnames()
+                    logger.info(f"Valid tar file with {len(tar_files)} files")
+                    
+                    # Extract required files from tar
+                    extracted_count = 0
+                    for member in tar.getmembers():
+                        if member.isfile():
+                            filename = Path(member.name).name
+                            if filename in required_files:
+                                target_path = data_path / filename
+                                with tar.extractfile(member) as source:
+                                    with open(target_path, 'wb') as target:
+                                        target.write(source.read())
+                                logger.info(f"Extracted from tar: {filename}")
+                                extracted_count += 1
+                    
+                    if extracted_count > 0:
+                        logger.info(f"Successfully extracted {extracted_count} files from tar")
+                        zip_path.unlink()  # Clean up
+                        # Skip to verification
+                        missing_files = []
+                        for filename in required_files:
+                            filepath = data_path / filename
+                            if filepath.exists():
+                                size_mb = filepath.stat().st_size / (1024 * 1024)
+                                logger.info(f"✅ {filename}: {size_mb:.1f} MB")
+                            else:
+                                missing_files.append(filename)
+                                logger.error(f"❌ {filename}: Not found after extraction")
+                        
+                        if missing_files:
+                            raise RuntimeError(f"Failed to extract required files: {missing_files}")
+                        
+                        logger.info(f"Dataset download and extraction completed successfully!")
+                        logger.info(f"Dataset setup complete for {dataset_type}")
+                        return
+                        
+            except Exception as tar_e:
+                logger.warning(f"Tar extraction also failed: {tar_e}")
+            
+            raise RuntimeError(f"Downloaded file is not a valid zip or tar file: {e}")
+        
+        logger.info("Extracting files from zip...")
         
         # Extract the zip file
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            # List all files in the zip
             file_list = zip_ref.namelist()
-            logger.info(f"Zip contains {len(file_list)} files")
+            logger.info(f"Processing {len(file_list)} files from zip")
             
             # Extract only the files we need
             extracted_count = 0
+            
+            # First try: exact filename matches
             for file_info in zip_ref.filelist:
-                # Check if this file is one we need
-                filename = Path(file_info.filename).name
-                if filename in required_files:
-                    # Extract to the data directory
-                    target_path = data_path / filename
-                    with zip_ref.open(file_info) as source, open(target_path, 'wb') as target:
-                        target.write(source.read())
-                    logger.info(f"Extracted: {filename}")
-                    extracted_count += 1
+                if not file_info.is_dir():  # Skip directories
+                    filename = Path(file_info.filename).name
+                    if filename in required_files:
+                        target_path = data_path / filename
+                        logger.info(f"Extracting {filename} from {file_info.filename}")
+                        with zip_ref.open(file_info) as source, open(target_path, 'wb') as target:
+                            target.write(source.read())
+                        logger.info(f"✅ Extracted: {filename} ({target_path.stat().st_size / (1024*1024):.1f} MB)")
+                        extracted_count += 1
+            
+            # Second try: if no direct matches, search in subdirectories
+            if extracted_count == 0:
+                logger.info("No direct filename matches, searching in subdirectories...")
+                for file_info in zip_ref.filelist:
+                    if not file_info.is_dir():
+                        for required_file in required_files:
+                            if file_info.filename.endswith(required_file):
+                                target_path = data_path / required_file
+                                logger.info(f"Extracting {required_file} from {file_info.filename}")
+                                with zip_ref.open(file_info) as source, open(target_path, 'wb') as target:
+                                    target.write(source.read())
+                                logger.info(f"✅ Extracted: {required_file} ({target_path.stat().st_size / (1024*1024):.1f} MB)")
+                                extracted_count += 1
+                                break
+            
+            # Third try: case-insensitive search
+            if extracted_count == 0:
+                logger.info("No matches found, trying case-insensitive search...")
+                for file_info in zip_ref.filelist:
+                    if not file_info.is_dir():
+                        filename_lower = Path(file_info.filename).name.lower()
+                        for required_file in required_files:
+                            if filename_lower == required_file.lower():
+                                target_path = data_path / required_file
+                                logger.info(f"Extracting {required_file} from {file_info.filename} (case-insensitive match)")
+                                with zip_ref.open(file_info) as source, open(target_path, 'wb') as target:
+                                    target.write(source.read())
+                                logger.info(f"✅ Extracted: {required_file} ({target_path.stat().st_size / (1024*1024):.1f} MB)")
+                                extracted_count += 1
+                                break
             
             if extracted_count == 0:
-                # If no direct matches, try to find files in subdirectories
-                logger.info("Direct file matches not found, searching in subdirectories...")
-                for file_info in zip_ref.filelist:
-                    for required_file in required_files:
-                        if file_info.filename.endswith(required_file):
-                            target_path = data_path / required_file
-                            with zip_ref.open(file_info) as source, open(target_path, 'wb') as target:
-                                target.write(source.read())
-                            logger.info(f"Extracted: {required_file} from {file_info.filename}")
-                            extracted_count += 1
-                            break
+                # Log all files for debugging
+                logger.error("No required files found in zip. Contents:")
+                for i, filename in enumerate(file_list):
+                    if i < 20:  # Show first 20 files
+                        logger.error(f"  {filename}")
+                    elif i == 20:
+                        logger.error(f"  ... and {len(file_list)-20} more files")
+                        break
+                
+                raise RuntimeError(f"None of the required files found in zip: {required_files}")
+            
+            logger.info(f"Successfully extracted {extracted_count}/{len(required_files)} required files")
         
         # Clean up zip file
         zip_path.unlink()
@@ -138,7 +268,32 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
         # Clean up partial files
         if zip_path.exists():
             zip_path.unlink()
+        
+        # Provide helpful troubleshooting information
+        logger.error("Dataset download failed. Troubleshooting options:")
+        logger.error("1. Check internet connection")
+        logger.error("2. Try manual download from: https://files.osf.io/v1/resources/ad7qg/providers/osfstorage/6603014bb3a1e301127dfa59/?zip=")
+        logger.error("3. Extract manually and place files in: data/babylm/")
+        logger.error(f"4. Required files: {required_files}")
+        logger.error("5. Or use force_download=True to retry")
+        
         raise RuntimeError(f"Dataset download failed: {e}")
+
+
+def manual_download_instructions():
+    """Print manual download instructions"""
+    print("\n" + "="*60)
+    print("MANUAL DOWNLOAD INSTRUCTIONS")
+    print("="*60)
+    print("If automatic download fails, please download manually:")
+    print("\n1. Download from: https://files.osf.io/v1/resources/ad7qg/providers/osfstorage/6603014bb3a1e301127dfa59/?zip=")
+    print("2. Extract the zip file")
+    print("3. Find these files and copy to data/babylm/:")
+    print("   - cc_3M_captions.json")
+    print("   - cc_3M_dino_v2_states_1of2.npy") 
+    print("   - cc_3M_dino_v2_states_2of2.npy")
+    print("4. Run the script again")
+    print("="*60)
 
 
 def test_babylm_connectivity():
@@ -186,8 +341,13 @@ class BabyLMMultiModalDataset(Dataset):
 
         # Download data if needed
         if self.auto_download:
-            download_babylm_data(
-                self.data_path, self.dataset_type, self.force_download)
+            try:
+                download_babylm_data(
+                    self.data_path, self.dataset_type, self.force_download)
+            except Exception as e:
+                logger.error(f"Automatic download failed: {e}")
+                manual_download_instructions()
+                raise
 
         # Load data
         self.captions, self.embeddings = self._load_data()
