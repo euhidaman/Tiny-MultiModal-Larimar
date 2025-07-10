@@ -27,9 +27,9 @@ def ensure_dataset_downloaded(config: dict) -> None:
     """Ensure the dataset is downloaded before starting training"""
     data_path = Path(config['data']['train_data_path'])
     dataset_type = config['data']['dataset_type']
-    
+
     print("Checking if dataset is already downloaded...")
-    
+
     if dataset_type == "cc_3M":
         required_files = [
             "cc_3M_captions.json",
@@ -43,10 +43,11 @@ def ensure_dataset_downloaded(config: dict) -> None:
         ]
     else:
         raise ValueError(f"Unknown dataset_type: {dataset_type}")
-    
+
     # Check if all files exist
-    all_exist = all((data_path / filename).exists() for filename in required_files)
-    
+    all_exist = all((data_path / filename).exists()
+                    for filename in required_files)
+
     if all_exist:
         print("Dataset already downloaded, proceeding with training")
         # Verify file sizes
@@ -65,9 +66,11 @@ def ensure_dataset_downloaded(config: dict) -> None:
             )
             print("Dataset download completed!")
         except Exception as e:
-            print(f"WARNING: Download failed (likely due to website maintenance): {e}")
+            print(
+                f"WARNING: Download failed (likely due to website maintenance): {e}")
             print("The system will automatically create dummy data for testing...")
-            print("This allows you to test the training pipeline while the BabyLM website is unavailable")
+            print(
+                "This allows you to test the training pipeline while the BabyLM website is unavailable")
             # The download function should handle creating dummy data automatically
 
 
@@ -254,19 +257,20 @@ def main():
     # Explicitly setup data module to trigger download if needed
     print("Setting up data module (downloading dataset if needed)...")
     data_module.setup()
-    
+
     # Verify dataset was loaded successfully
     if not hasattr(data_module, 'train_dataset') or len(data_module.train_dataset) == 0:
         raise RuntimeError("Dataset setup failed! No training data found.")
-    
-    print(f"Dataset ready: {len(data_module.train_dataset)} train samples, {len(data_module.val_dataset)} val samples")
+
+    print(
+        f"Dataset ready: {len(data_module.train_dataset)} train samples, {len(data_module.val_dataset)} val samples")
 
     # Setup model
     print("Initializing optimal Larimar model...")
-    
+
     # Create model config
     from src.modules.larimar_multimodal_vae import LarimarMultiModalConfig
-    
+
     model_config = LarimarMultiModalConfig(
         text_model_name=config['model']['text_model_name'],
         decoder_model_name=config['model']['decoder_model_name'],
@@ -321,19 +325,19 @@ def main():
     print("="*80)
     print("TRAINING COMPLETED!")
     print("="*80)
-    
+
     # Find checkpoint callback
     checkpoint_callback = None
     for callback in trainer.callbacks:
         if isinstance(callback, ModelCheckpoint):
             checkpoint_callback = callback
             break
-    
+
     if checkpoint_callback and checkpoint_callback.best_model_path:
         print(f"Best model checkpoint: {checkpoint_callback.best_model_path}")
     else:
         print("No checkpoint callback found or no best model saved")
-    
+
     print(
         f"W&B Run: https://wandb.ai/{config['logging']['wandb_entity']}/{config['logging']['wandb_project']}/runs/{logger.experiment.id}")
     print("\nNext steps:")
