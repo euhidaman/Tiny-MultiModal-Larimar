@@ -33,12 +33,12 @@ This configuration is scientifically designed to **outperform the original Larim
 ## Expected Performance Improvements
 
 ### **Language Modeling (Original Larimar Benchmarks)**
-| Metric | Original Larimar | Expected Improvement |
-|--------|------------------|---------------------|
-| WikiText-103 Perplexity | 23.5 | **15-20% better** |
-| Penn Treebank Perplexity | 87.2 | **10-15% better** |
-| LAMBADA Accuracy | 52% | **+5-8%** |
-| Memory Utilization | 78% | **+10-15%** |
+| Metric                   | Original Larimar | Expected Improvement |
+| ------------------------ | ---------------- | -------------------- |
+| WikiText-103 Perplexity  | 23.5             | **15-20% better**    |
+| Penn Treebank Perplexity | 87.2             | **10-15% better**    |
+| LAMBADA Accuracy         | 52%              | **+5-8%**            |
+| Memory Utilization       | 78%              | **+10-15%**          |
 
 ### **Novel Multimodal Capabilities**
 - ✅ **Image captioning**: BLEU-4 > 25, CIDEr > 85

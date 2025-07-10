@@ -112,7 +112,8 @@ logging:
   # Weights & Biases
   wandb_project: "tiny-multimodal-larimar"
   wandb_entity: "babylm-ntust"
-  wandb_tags: ["larimar", "multimodal", "babylm", "episodic-memory", "beating-larimar"]
+  wandb_tags:
+    ["larimar", "multimodal", "babylm", "episodic-memory", "beating-larimar"]
 
   # Checkpoints
   checkpoint_dir: "outputs"
@@ -193,7 +194,7 @@ evaluation:
   # Text Generation Quality (Enhanced evaluation)
   generation_quality:
     - "bleu_1" # 1-gram precision
-    - "bleu_2" # 2-gram precision  
+    - "bleu_2" # 2-gram precision
     - "bleu_4" # 4-gram precision
     - "rouge_l" # Longest common subsequence
     - "rouge_1" # Unigram recall
@@ -254,21 +255,21 @@ evaluation:
     - "wikitext_103" # Standard language modeling
     - "ptb" # Penn Treebank
     - "lambada" # Long-range dependencies
-    
+
     # Enhanced language understanding
     - "hellaswag" # Commonsense reasoning
     - "piqa" # Physical reasoning
     - "winogrande" # Coreference resolution
     - "arc_easy" # Science QA
     - "arc_challenge" # Advanced science QA
-    
+
     # Multimodal benchmarks
     - "conceptual_captions" # Image captioning
     - "coco_captions" # Standard captioning
     - "flickr30k" # Image-text retrieval
     - "vqa_v2" # Visual question answering
     - "gqa" # Compositional VQA
-    
+
     # Memory and reasoning
     - "babi" # Reasoning tasks
     - "children_book_test" # Reading comprehension
@@ -302,7 +303,7 @@ memory:
   save_memory_states: true # Save for analysis
   visualize_memory: true # Memory visualization
   memory_probing: true # Probe memory contents
-  
+
   # Advanced Memory Features (Novel enhancements)
   memory_consolidation: true # Long-term memory
   memory_interference_analysis: true # Forgetting analysis
