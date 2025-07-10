@@ -28,6 +28,16 @@ BABYLM_URLS = {
 }
 
 
+def test_babylm_connectivity():
+    """Test if BabyLM website is accessible"""
+    test_url = "https://data.babylm.github.io/multimodal/cc_3M_captions.json"
+    try:
+        response = requests.head(test_url, timeout=10, verify=False)
+        return response.status_code == 200
+    except:
+        return False
+
+
 def download_file(url: str, filepath: Path, force_download: bool = False):
     """Download a file with progress bar, handling SSL issues"""
     if filepath.exists() and not force_download:
@@ -116,6 +126,13 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
     data_path = Path(data_path)
     data_path.mkdir(parents=True, exist_ok=True)
 
+    # Test connectivity first
+    if not test_babylm_connectivity():
+        logger.warning("BabyLM website appears to be inaccessible. Testing connectivity...")
+        logger.warning("If you need to train immediately, dummy data will be created as fallback.")
+    else:
+        logger.info("BabyLM website is accessible, proceeding with download...")
+
     if dataset_type == "cc_3M":
         required_files = [
             "cc_3M_captions.json",
@@ -140,27 +157,34 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
             download_errors.append((filename, str(e)))
 
     if download_errors:
-        logger.warning(
-            "Some files failed to download. Checking if we can create dummy data...")
+        logger.error(f"Failed to download {len(download_errors)} files:")
+        for filename, error in download_errors:
+            logger.error(f"  {filename}: {error}")
 
         # Check if we already have some files
-        existing_files = [
-            f for f in required_files if (data_path / f).exists()]
+        existing_files = [f for f in required_files if (data_path / f).exists()]
 
         if len(existing_files) == 0:
-            logger.warning(
-                "No files downloaded successfully. Creating minimal dummy data for testing...")
+            logger.warning("No files downloaded successfully. Creating minimal dummy data for testing...")
+            logger.warning("IMPORTANT: This is dummy data only suitable for testing the pipeline!")
             create_dummy_data(data_path, dataset_type)
         else:
-            logger.info(
-                f"Found {len(existing_files)} existing files, proceeding with available data")
+            logger.error(f"Only {len(existing_files)}/{len(required_files)} files available. Training may fail.")
+            # Don't fall back to dummy data if we have partial real data
+            raise RuntimeError(f"Incomplete dataset: missing {len(download_errors)} required files")
+    else:
+        logger.info(f"All {len(required_files)} files downloaded successfully!")
 
     logger.info(f"Dataset setup complete for {dataset_type}")
 
 
 def create_dummy_data(data_path: Path, dataset_type: str = "cc_3M"):
     """Create minimal dummy data for testing when downloads fail"""
-    logger.info("Creating dummy data for testing purposes")
+    logger.warning("="*60)
+    logger.warning("CREATING DUMMY DATA FOR TESTING ONLY")
+    logger.warning("This is NOT real BabyLM data!")
+    logger.warning("Download real data from https://data.babylm.github.io/multimodal/")
+    logger.warning("="*60)
 
     if dataset_type == "cc_3M":
         # Create dummy captions
@@ -229,8 +253,10 @@ Created automatically by Tiny-MultiModal-Larimar
     with open(data_path / "README_DUMMY_DATA.txt", 'w') as f:
         f.write(readme_content)
 
-    logger.warning(
-        "IMPORTANT: Using dummy data for testing. Download real data for actual training!")
+    logger.warning("="*60)
+    logger.warning("DUMMY DATA CREATED - NOT SUITABLE FOR REAL TRAINING!")
+    logger.warning("Please download real BabyLM data for actual model training")
+    logger.warning("="*60)
 
 
 def create_dummy_babylm_data(data_path: Path, dataset_type: str = "cc_3M"):

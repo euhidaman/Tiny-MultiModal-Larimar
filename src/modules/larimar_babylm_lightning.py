@@ -368,8 +368,23 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
 
         # Choose scheduler
         if self.hparams.scheduler_type == "linear":
-            # Estimate total steps
-            total_steps = self.trainer.estimated_stepping_batches
+            # Safely estimate total steps - handle small datasets
+            try:
+                total_steps = self.trainer.estimated_stepping_batches
+            except (ValueError, AttributeError):
+                # Fallback: estimate manually for small datasets
+                if hasattr(self.trainer, 'datamodule') and self.trainer.datamodule:
+                    try:
+                        train_loader = self.trainer.datamodule.train_dataloader()
+                        total_steps = len(train_loader) * self.hparams.max_epochs
+                    except:
+                        total_steps = 1000  # Conservative fallback
+                else:
+                    total_steps = 1000  # Conservative fallback
+                
+            # Adjust warmup steps for small datasets
+            warmup_steps = min(warmup_steps, total_steps // 4)
+            
             scheduler = get_linear_schedule_with_warmup(
                 optimizer,
                 num_warmup_steps=warmup_steps,

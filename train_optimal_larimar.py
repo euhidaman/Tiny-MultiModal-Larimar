@@ -23,7 +23,7 @@ sys.path.append(str(Path(__file__).parent / "src"))
 # Model imports
 
 
-def ensure_dataset_downloaded(config: dict) -> None:
+def ensure_dataset_downloaded(config: dict, force_download: bool = False) -> None:
     """Ensure the dataset is downloaded before starting training"""
     data_path = Path(config['data']['train_data_path'])
     dataset_type = config['data']['dataset_type']
@@ -48,7 +48,7 @@ def ensure_dataset_downloaded(config: dict) -> None:
     all_exist = all((data_path / filename).exists()
                     for filename in required_files)
 
-    if all_exist:
+    if all_exist and not force_download:
         print("Dataset already downloaded, proceeding with training")
         # Verify file sizes
         for filename in required_files:
@@ -56,21 +56,20 @@ def ensure_dataset_downloaded(config: dict) -> None:
             size_mb = filepath.stat().st_size / (1024 * 1024)
             print(f"   {filename}: {size_mb:.1f} MB")
     else:
-        print("Dataset not found, attempting download...")
-        print("Note: If BabyLM website is under maintenance, dummy data will be created automatically")
+        if force_download:
+            print("Force download requested, re-downloading dataset...")
+        else:
+            print("Dataset not found, attempting download...")
         try:
             download_babylm_data(
                 data_path=str(data_path),
                 dataset_type=dataset_type,
-                force_download=False
+                force_download=force_download
             )
             print("Dataset download completed!")
         except Exception as e:
-            print(
-                f"WARNING: Download failed (likely due to website maintenance): {e}")
-            print("The system will automatically create dummy data for testing...")
-            print(
-                "This allows you to test the training pipeline while the BabyLM website is unavailable")
+            print(f"WARNING: Download failed: {e}")
+            print("Note: If the BabyLM website is temporarily unavailable, dummy data will be created automatically for testing")
             # The download function should handle creating dummy data automatically
 
 
@@ -160,6 +159,19 @@ def setup_callbacks(config: dict) -> list:
 def create_trainer(config: dict, logger, callbacks: list) -> pl.Trainer:
     """Create optimized PyTorch Lightning trainer"""
 
+    # Use default validation settings - only adjust for actual dummy data
+    val_check_interval = config['trainer']['val_check_interval']
+    check_val_every_n_epoch = config['trainer']['check_val_every_n_epoch']
+    
+    # Only switch to epoch-based validation if explicitly using dummy data
+    # (not for real large datasets like the full cc_3M)
+    data_path = Path(config['data']['train_data_path'])
+    if 'dummy' in str(data_path) or 'dummy' in config['data'].get('dataset_name', ''):
+        # For actual small dummy datasets, validate every epoch instead of every N steps
+        val_check_interval = 1.0  # Every epoch
+        check_val_every_n_epoch = 1
+        print("Note: Using epoch-based validation for dummy dataset compatibility")
+
     trainer = pl.Trainer(
         # Hardware configuration
         accelerator=config['trainer']['accelerator'],
@@ -172,9 +184,9 @@ def create_trainer(config: dict, logger, callbacks: list) -> pl.Trainer:
         gradient_clip_val=config['trainer']['gradient_clip_val'],
         accumulate_grad_batches=config['trainer']['accumulate_grad_batches'],
 
-        # Validation configuration
-        val_check_interval=config['trainer']['val_check_interval'],
-        check_val_every_n_epoch=config['trainer']['check_val_every_n_epoch'],
+        # Validation configuration (adapted for small datasets)
+        val_check_interval=val_check_interval,
+        check_val_every_n_epoch=check_val_every_n_epoch,
         limit_val_batches=config['trainer']['limit_val_batches'],
 
         # Logging and callbacks
@@ -203,6 +215,8 @@ def main():
     parser.add_argument("--resume_from_checkpoint", type=str, default=None,
                         help="Path to checkpoint to resume from")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--force_download", action="store_true",
+                        help="Force re-download of dataset even if files exist")
 
     args = parser.parse_args()
 
@@ -222,9 +236,7 @@ def main():
 
     # Ensure dataset is downloaded first
     print("DATASET SETUP")
-    print("Note: BabyLM website appears to be under maintenance (404 errors)")
-    print("Automatic fallback to dummy data is available for testing")
-    ensure_dataset_downloaded(config)
+    ensure_dataset_downloaded(config, args.force_download)
 
     # Setup logging
     logger = setup_wandb_logging(config)
@@ -251,7 +263,7 @@ def main():
         dataset_type=config['data']['dataset_type'],
         train_split=config['data']['train_split'],
         auto_download=True,
-        force_download=False
+        force_download=args.force_download
     )
 
     # Explicitly setup data module to trigger download if needed
