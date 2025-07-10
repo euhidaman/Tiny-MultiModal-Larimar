@@ -223,16 +223,28 @@ class TinyLarimarMemory(nn.Module):
                 z_noisy, prior_memory[0], pseudoinverse=True)
 
             # Approximate pseudoinverse for stable update
-            # [batch_size, episode_size, memory_size]
-            w_permuted = w.transpose(0, 1)
-            w_pseudo_inv = self.approx_pseudoinverse(
-                w_permuted, steps=self.pseudoinverse_steps)
+            # w is [episode_size, batch_size, memory_size]
+            # We need to transpose to [batch_size, episode_size, memory_size] for bmm
+            w_permuted = w.transpose(0, 1)  # [batch_size, episode_size, memory_size]
+            
+            # Check if we need pseudoinverse (only if episode_size != memory_size)
+            if episode_size != self.memory_size:
+                w_pseudo_inv = self.approx_pseudoinverse(
+                    w_permuted, steps=self.pseudoinverse_steps)
+            else:
+                # If dimensions match, try to use direct inverse
+                try:
+                    w_pseudo_inv = torch.inverse(w_permuted)
+                except:
+                    # Fallback to pseudoinverse
+                    w_pseudo_inv = self.approx_pseudoinverse(
+                        w_permuted, steps=self.pseudoinverse_steps)
 
             # Update memory mean
             # [batch_size, episode_size, code_size]
             z_permuted = z_noisy.transpose(0, 1)
-            # [batch_size, memory_size, code_size]
-            new_memory_mean = torch.bmm(w_pseudo_inv, z_permuted)
+            # [batch_size, memory_size, code_size] = [batch_size, episode_size, memory_size]^T @ [batch_size, episode_size, code_size]
+            new_memory_mean = torch.bmm(w_pseudo_inv.transpose(1, 2), z_permuted)
 
             posterior_memory = (new_memory_mean, prior_memory[1])
         else:
@@ -310,16 +322,26 @@ class TinyLarimarMemory(nn.Module):
             A_pinv: Approximate pseudoinverse
         """
         batch_size, m, n = A.shape
+        
+        # Use Moore-Penrose pseudoinverse approximation
+        # Initialize with scaled transpose
+        alpha = 2.0 / (torch.norm(A, dim=(1, 2), keepdim=True) ** 2 + 1e-8)
+        A_pinv = alpha * A.transpose(1, 2)  # [batch_size, n, m]
 
-        # Initialize with transpose
-        A_pinv = A.transpose(1, 2)  # [batch_size, n, m]
-
-        # Iterative refinement
+        # Iterative refinement using Schulz method
         for _ in range(steps):
-            # A_pinv = A_pinv - A_pinv @ A @ A_pinv + A_pinv
-            AAinv = torch.bmm(A, A_pinv)  # [batch_size, m, m]
-            A_pinv = A_pinv - \
-                torch.bmm(A_pinv, torch.bmm(AAinv, A_pinv)) + A_pinv
+            # A_pinv = A_pinv * (2*I - A * A_pinv)
+            # Compute A * A_pinv: [batch_size, m, n] @ [batch_size, n, m] = [batch_size, m, m]
+            AA_pinv = torch.bmm(A, A_pinv)  # [batch_size, m, m]
+            
+            # Create identity matrix
+            I = torch.eye(m, device=A.device, dtype=A.dtype).unsqueeze(0).expand(batch_size, -1, -1)
+            
+            # Compute (2*I - A*A_pinv)
+            factor = 2 * I - AA_pinv  # [batch_size, m, m]
+            
+            # Update A_pinv = A_pinv * (2*I - A*A_pinv)
+            A_pinv = torch.bmm(A_pinv, factor)  # [batch_size, n, m] @ [batch_size, m, m] = [batch_size, n, m]
 
         return A_pinv
 
