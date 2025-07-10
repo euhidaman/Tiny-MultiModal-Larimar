@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import lightning as L
+import pytorch_lightning as pl
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 from typing import Dict, Any, Optional
 import math
@@ -9,7 +9,7 @@ from .larimar_multimodal_vae import LarimarMultiModalVAE, LarimarMultiModalConfi
 from .babylm_data import BabyLMMultiModalDataModule
 
 
-class LarimarBabyLMLightningModel(L.LightningModule):
+class LarimarBabyLMLightningModel(pl.LightningModule):
     """
     Lightning module for training the Larimar-style Tiny-MultiModal model on BabyLM data.
     This combines the authentic Larimar architecture with DiNOv2 vision encoding.

@@ -4,7 +4,7 @@ from transformers import AutoTokenizer
 import json
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any
-import lightning as L
+import pytorch_lightning as pl
 from pathlib import Path
 import os
 import requests
@@ -435,7 +435,7 @@ class BabyLMMultiModalDataset(Dataset):
         }
 
 
-class BabyLMMultiModalDataModule(L.LightningDataModule):
+class BabyLMMultiModalDataModule(pl.LightningDataModule):
     """Lightning DataModule for BabyLM multimodal data"""
 
     def __init__(self,

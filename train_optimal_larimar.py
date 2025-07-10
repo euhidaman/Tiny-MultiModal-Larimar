@@ -4,6 +4,8 @@ Optimal training script for Tiny-MultiModal-Larimar to beat original Larimar.
 Uses the optimized configuration and comprehensive logging.
 """
 
+from src.modules.babylm_data import BabyLMMultiModalDataModule, download_babylm_data
+from src.modules.larimar_babylm_lightning import LarimarBabyLMLightningModel
 import os
 import torch
 import argparse
@@ -19,8 +21,6 @@ import sys
 sys.path.append(str(Path(__file__).parent / "src"))
 
 # Model imports
-from src.modules.larimar_babylm_lightning import LarimarBabyLMLightningModel
-from src.modules.babylm_data import BabyLMMultiModalDataModule, download_babylm_data
 
 
 def ensure_dataset_downloaded(config: dict) -> None:
