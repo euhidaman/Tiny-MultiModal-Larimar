@@ -326,7 +326,7 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
         learning_rate = float(self.hparams.learning_rate)
         weight_decay = float(self.hparams.weight_decay)
         warmup_steps = int(self.hparams.warmup_steps)
-        
+
         # Separate parameters for different learning rates
         encoder_params = []
         decoder_params = []
@@ -380,15 +380,16 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
                 if hasattr(self.trainer, 'datamodule') and self.trainer.datamodule:
                     try:
                         train_loader = self.trainer.datamodule.train_dataloader()
-                        total_steps = len(train_loader) * self.hparams.max_epochs
+                        total_steps = len(train_loader) * \
+                            self.hparams.max_epochs
                     except:
                         total_steps = 1000  # Conservative fallback
                 else:
                     total_steps = 1000  # Conservative fallback
-                
+
             # Adjust warmup steps for small datasets
             warmup_steps = min(warmup_steps, total_steps // 4)
-            
+
             scheduler = get_linear_schedule_with_warmup(
                 optimizer,
                 num_warmup_steps=warmup_steps,
