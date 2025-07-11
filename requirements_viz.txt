@@ -1,2 +1,0 @@
-# Additional requirements for enhanced visualizations
-
