@@ -149,22 +149,35 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
                 loss_weights['kl_weight'] * outputs['total_kl_loss'] +
                 loss_weights['memory_weight'] * outputs['memory_kl_loss'])
 
-        # Log metrics
+        # Check for NaN or inf losses
+        if torch.isnan(loss) or torch.isinf(loss):
+            print(f"WARNING: NaN/Inf loss detected at step {step}")
+            print(f"  Reconstruction loss: {outputs['reconstruction_loss']}")
+            print(f"  Total KL loss: {outputs['total_kl_loss']}")
+            print(f"  Memory KL loss: {outputs['memory_kl_loss']}")
+            print(f"  Loss weights: {loss_weights}")
+            # Skip this batch to prevent training failure
+            return torch.tensor(0.0, requires_grad=True, device=self.device)
+
+        # Get batch size for proper logging
+        batch_size = batch['input_ids'].size(0)
+
+        # Log metrics with batch size
         self.log('train/loss', loss, on_step=True,
-                 on_epoch=True, prog_bar=True)
+                 on_epoch=True, prog_bar=True, batch_size=batch_size)
         self.log('train/reconstruction_loss',
-                 outputs['reconstruction_loss'], on_step=True, on_epoch=True)
+                 outputs['reconstruction_loss'], on_step=True, on_epoch=True, batch_size=batch_size)
         self.log('train/text_kl_loss',
-                 outputs['text_kl_loss'], on_step=True, on_epoch=True)
+                 outputs['text_kl_loss'], on_step=True, on_epoch=True, batch_size=batch_size)
         self.log('train/multimodal_kl_loss',
-                 outputs['multimodal_kl_loss'], on_step=True, on_epoch=True)
+                 outputs['multimodal_kl_loss'], on_step=True, on_epoch=True, batch_size=batch_size)
         self.log('train/memory_kl_loss',
-                 outputs['memory_kl_loss'], on_step=True, on_epoch=True)
+                 outputs['memory_kl_loss'], on_step=True, on_epoch=True, batch_size=batch_size)
 
         # Log loss weights
-        self.log('train/kl_weight', loss_weights['kl_weight'], on_step=True)
+        self.log('train/kl_weight', loss_weights['kl_weight'], on_step=True, batch_size=batch_size)
         self.log('train/memory_weight',
-                 loss_weights['memory_weight'], on_step=True)
+                 loss_weights['memory_weight'], on_step=True, batch_size=batch_size)
 
         # Store for epoch end
         self.training_step_outputs.append({
@@ -181,17 +194,27 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
         """Validation step"""
         outputs = self.forward(batch)
 
-        # Log validation metrics
+        # Check for NaN or inf losses
+        if torch.isnan(outputs['loss']) or torch.isinf(outputs['loss']):
+            print(f"WARNING: NaN/Inf validation loss detected at batch {batch_idx}")
+            # Return a dummy output to prevent training failure
+            dummy_output = {k: torch.tensor(0.0, device=self.device) for k in outputs.keys()}
+            return dummy_output
+
+        # Get batch size for proper logging
+        batch_size = batch['input_ids'].size(0)
+
+        # Log validation metrics with batch size
         self.log('val/loss', outputs['loss'],
-                 on_step=False, on_epoch=True, prog_bar=True)
+                 on_step=False, on_epoch=True, prog_bar=True, batch_size=batch_size)
         self.log('val/reconstruction_loss',
-                 outputs['reconstruction_loss'], on_step=False, on_epoch=True)
+                 outputs['reconstruction_loss'], on_step=False, on_epoch=True, batch_size=batch_size)
         self.log('val/text_kl_loss',
-                 outputs['text_kl_loss'], on_step=False, on_epoch=True)
+                 outputs['text_kl_loss'], on_step=False, on_epoch=True, batch_size=batch_size)
         self.log('val/multimodal_kl_loss',
-                 outputs['multimodal_kl_loss'], on_step=False, on_epoch=True)
+                 outputs['multimodal_kl_loss'], on_step=False, on_epoch=True, batch_size=batch_size)
         self.log('val/memory_kl_loss',
-                 outputs['memory_kl_loss'], on_step=False, on_epoch=True)
+                 outputs['memory_kl_loss'], on_step=False, on_epoch=True, batch_size=batch_size)
 
         # Store for epoch end
         self.validation_step_outputs.append({

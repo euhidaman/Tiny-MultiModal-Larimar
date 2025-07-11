@@ -136,7 +136,7 @@ def setup_callbacks(config: dict) -> list:
     checkpoint_callback = ModelCheckpoint(
         dirpath=config['logging']['checkpoint_dir'],
         filename='optimal-larimar-{epoch:02d}-{val_loss:.2f}',
-        monitor='val/total_loss',
+        monitor='val/loss',
         mode='min',
         save_top_k=config['logging']['save_top_k'],
         save_last=config['logging']['save_last'],
@@ -188,8 +188,12 @@ def create_trainer(config: dict, logger, callbacks: list) -> pl.Trainer:
         max_epochs=config['trainer']['max_epochs'],
         max_steps=config['trainer']['max_steps'],
         gradient_clip_val=config['trainer']['gradient_clip_val'],
+        gradient_clip_algorithm='norm',  # Use norm-based clipping
         accumulate_grad_batches=config['trainer']['accumulate_grad_batches'],
 
+        # Numerical stability
+        detect_anomaly=True,  # Detect NaN/inf during training
+        
         # Validation configuration (adapted for small datasets)
         val_check_interval=val_check_interval,
         check_val_every_n_epoch=check_val_every_n_epoch,
