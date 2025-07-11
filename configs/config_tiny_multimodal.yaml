@@ -85,7 +85,7 @@ trainer:
   accelerator: "gpu"
   devices: 1
   strategy: "auto"
-  precision: "16-mixed" # Mixed precision for efficiency
+  precision: "32" # 32-bit for debugging (was "16-mixed")
 
   # Training (Extended for better convergence)
   max_epochs: 20 # More epochs for thorough learning

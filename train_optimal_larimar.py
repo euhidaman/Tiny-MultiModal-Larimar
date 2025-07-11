@@ -191,8 +191,8 @@ def create_trainer(config: dict, logger, callbacks: list) -> pl.Trainer:
         gradient_clip_algorithm='norm',  # Use norm-based clipping
         accumulate_grad_batches=config['trainer']['accumulate_grad_batches'],
 
-        # Numerical stability
-        detect_anomaly=True,  # Detect NaN/inf during training
+        # Disable anomaly detection temporarily to avoid AMP issues
+        # detect_anomaly=True,  # Causes issues with AMP, disabled for now
         
         # Validation configuration (adapted for small datasets)
         val_check_interval=val_check_interval,
@@ -327,6 +327,20 @@ def main():
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     print(
         f"Trainable parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad):,}")
+
+    # Check for NaN parameters at initialization
+    nan_params = 0
+    for name, param in model.named_parameters():
+        if torch.isnan(param).any():
+            print(f"WARNING: NaN parameter detected in {name}")
+            nan_params += 1
+    
+    if nan_params > 0:
+        print(f"ERROR: {nan_params} parameters contain NaN values at initialization!")
+        print("This will cause training to fail immediately.")
+        return
+    else:
+        print("✅ All parameters initialized correctly (no NaN values)")
 
     # Log model info
     logger.experiment.log({

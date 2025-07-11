@@ -156,8 +156,18 @@ class LarimarBabyLMLightningModel(pl.LightningModule):
             print(f"  Total KL loss: {outputs['total_kl_loss']}")
             print(f"  Memory KL loss: {outputs['memory_kl_loss']}")
             print(f"  Loss weights: {loss_weights}")
-            # Skip this batch to prevent training failure
-            return torch.tensor(0.0, requires_grad=True, device=self.device)
+            
+            # Check individual components for NaN
+            if torch.isnan(outputs['reconstruction_loss']):
+                print("  -> Reconstruction loss is NaN - likely decoder issue")
+            if torch.isnan(outputs['memory_kl_loss']):
+                print("  -> Memory KL loss is NaN - likely memory initialization issue")
+            if torch.isnan(outputs['total_kl_loss']):
+                print("  -> Total KL loss is NaN - likely encoder issue")
+                
+            # Use a small finite loss to prevent training crash
+            loss = torch.tensor(1.0, requires_grad=True, device=self.device)
+            print(f"  -> Using fallback loss: {loss}")
 
         # Get batch size for proper logging
         batch_size = batch['input_ids'].size(0)
