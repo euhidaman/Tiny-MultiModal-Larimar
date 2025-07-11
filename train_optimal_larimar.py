@@ -20,6 +20,12 @@ import sys
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent / "src"))
 
+# Optimize PyTorch for RTX A6000 with Tensor Cores
+torch.set_float32_matmul_precision('medium')
+
+# Set tokenizers parallelism to avoid fork warnings
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 # Model imports
 
 
@@ -141,7 +147,7 @@ def setup_callbacks(config: dict) -> list:
 
     # Early stopping
     early_stopping = EarlyStopping(
-        monitor='val/total_loss',
+        monitor='val/loss',
         patience=config['callbacks']['early_stopping']['patience'],
         min_delta=config['callbacks']['early_stopping']['min_delta'],
         mode='min',
