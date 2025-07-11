@@ -41,3 +41,8 @@ jupyterlab
 
 # Training acceleration
 accelerate
+
+matplotlib
+seaborn
+plotly
+scikit-learn
