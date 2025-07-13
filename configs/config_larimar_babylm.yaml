@@ -2,7 +2,7 @@
 # This config integrates Larimar text encoder/decoder with DiNOv2 vision encoder
 
 # Data settings
-data_path: "data/babylm"
+data_path: "../babylm_dataset"
 dataset_type: "cc_3M" # "cc_3M" or "local_narr"
 max_length: 512
 

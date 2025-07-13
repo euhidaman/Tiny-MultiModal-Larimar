@@ -29,14 +29,14 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); 
 
 # Create necessary directories
 echo "📁 Creating project directories..."
-mkdir -p /workspace/Tiny-MultiModal-Larimar/data/babylm
+mkdir -p /workspace/babylm_dataset
 mkdir -p /workspace/Tiny-MultiModal-Larimar/outputs
 
 echo "✅ Setup complete!"
 echo ""
 echo "Next steps:"
 echo "1. Upload your project files to /workspace/Tiny-MultiModal-Larimar/"
-echo "2. Upload BabyLM data to /workspace/Tiny-MultiModal-Larimar/data/babylm/"
+echo "2. Upload BabyLM data to /workspace/babylm_dataset/"
 echo "3. Run: python test_larimar_integration.py"
 echo "4. Start training: python train_larimar_babylm.py"
 echo ""

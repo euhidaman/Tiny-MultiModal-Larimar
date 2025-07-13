@@ -500,7 +500,7 @@ def create_larimar_babylm_model(
 
 
 def create_data_module(
-    data_path: str = "data/babylm",
+    data_path: str = "../babylm_dataset",
     tokenizer_name: str = "bert-base-uncased",
     batch_size: int = 12,
     max_length: int = 512,

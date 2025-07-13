@@ -52,7 +52,7 @@ model:
 # Data Configuration - Optimized for beating Larimar
 data:
   # Paths
-  train_data_path: "data/babylm"
+  train_data_path: "../babylm_dataset"
   val_data_path: null
   test_data_path: null
 

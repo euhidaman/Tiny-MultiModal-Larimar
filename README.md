@@ -43,7 +43,7 @@ pip install datasets accelerate wandb tensorboard
 Expected data format:
 
 ```text
-data/babylm/
+../babylm_dataset/
 ├── cc_3M_captions.json              # Text captions
 ├── cc_3M_dino_v2_states_1of2.npy    # DiNOv2 embeddings (part 1)
 ├── cc_3M_dino_v2_states_2of2.npy    # DiNOv2 embeddings (part 2)
@@ -173,7 +173,7 @@ max_epochs: 10
 
 ```text
 # Check data structure
-data/babylm/
+../babylm_dataset/
 ├── cc_3M_captions.json              ✓
 ├── cc_3M_dino_v2_states_1of2.npy    ✓ 
 ├── cc_3M_dino_v2_states_2of2.npy    ✓

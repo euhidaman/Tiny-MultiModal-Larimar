@@ -57,7 +57,7 @@ def test_dataset_download_and_loading():
         from src.modules.babylm_data import download_babylm_data, BabyLMMultiModalDataset
 
         # Use a local data directory
-        data_path = Path("data/babylm")
+        data_path = Path("../babylm_dataset")
         data_path.mkdir(parents=True, exist_ok=True)
 
         # Download the dataset
@@ -125,7 +125,7 @@ def test_data_module_with_real_data():
 
         # Create data module that will use the downloaded data
         data_module = BabyLMMultiModalDataModule(
-            data_path="data/babylm",
+            data_path="../babylm_dataset",
             tokenizer_name="bert-base-uncased",
             max_length=128,
             batch_size=4,  # Small batch for CPU
@@ -207,7 +207,7 @@ def test_model_with_real_data():
 
         # Get real data batch
         data_module = BabyLMMultiModalDataModule(
-            data_path="data/babylm",
+            data_path="../babylm_dataset",
             tokenizer_name="bert-base-uncased",
             max_length=128,
             batch_size=2,  # Very small for CPU
@@ -287,7 +287,7 @@ def test_lightning_training_step():
 
         # Get real data
         data_module = BabyLMMultiModalDataModule(
-            data_path="data/babylm",
+            data_path="../babylm_dataset",
             batch_size=2,
             num_workers=0,
             auto_download=False

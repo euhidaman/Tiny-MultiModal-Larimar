@@ -29,7 +29,7 @@ def parse_args():
         description="Train Tiny-MultiModal-Larimar model")
 
     # Data arguments
-    parser.add_argument("--data_path", type=str, default="data/babylm",
+    parser.add_argument("--data_path", type=str, default="../babylm_dataset",
                         help="Path to BabyLM multimodal data")
     parser.add_argument("--dataset_type", type=str, default="cc_3M",
                         choices=["cc_3M", "local_narr"],

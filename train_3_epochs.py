@@ -25,7 +25,7 @@ config = LarimarMultiModalConfig(
 
 # Data
 data_module = BabyLMMultiModalDataModule(
-    data_path="data/babylm",
+    data_path="../babylm_dataset",
     batch_size=16,
     max_length=128,
     num_workers=2

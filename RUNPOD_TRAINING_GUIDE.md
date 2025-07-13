@@ -69,7 +69,7 @@ cd Tiny-MultiModal-Larimar
 
 ```bash
 # Create data directory
-mkdir -p data/babylm
+mkdir -p ../babylm_dataset
 
 # Upload your BabyLM data files:
 # - cc_3M_captions.json
@@ -181,7 +181,7 @@ python -c "from src.modules.larimar_multimodal_vae import LarimarMultiModalVAE; 
 ```bash
 # 1. Connect to RunPod via VS Code SSH
 # 2. Set up environment (as above)
-# 3. Upload data to data/babylm/
+# 3. Upload data to ../babylm_dataset/
 # 4. Test integration
 python test_larimar_integration.py
 

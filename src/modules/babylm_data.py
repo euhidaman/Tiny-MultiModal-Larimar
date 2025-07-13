@@ -273,7 +273,7 @@ def download_babylm_data(data_path: str, dataset_type: str = "cc_3M", force_down
         logger.error("Dataset download failed. Troubleshooting options:")
         logger.error("1. Check internet connection")
         logger.error("2. Try manual download from: https://files.osf.io/v1/resources/ad7qg/providers/osfstorage/6603014bb3a1e301127dfa59/?zip=")
-        logger.error("3. Extract manually and place files in: data/babylm/")
+        logger.error("3. Extract manually and place files in: ../babylm_dataset/")
         logger.error(f"4. Required files: {required_files}")
         logger.error("5. Or use force_download=True to retry")
         
@@ -288,7 +288,7 @@ def manual_download_instructions():
     print("If automatic download fails, please download manually:")
     print("\n1. Download from: https://files.osf.io/v1/resources/ad7qg/providers/osfstorage/6603014bb3a1e301127dfa59/?zip=")
     print("2. Extract the zip file")
-    print("3. Find these files and copy to data/babylm/:")
+    print("3. Find these files and copy to ../babylm_dataset/:")
     print("   - cc_3M_captions.json")
     print("   - cc_3M_dino_v2_states_1of2.npy") 
     print("   - cc_3M_dino_v2_states_2of2.npy")
@@ -435,7 +435,7 @@ class BabyLMMultiModalDataModule(pl.LightningDataModule):
     """Lightning DataModule for BabyLM multimodal data"""
 
     def __init__(self,
-                 data_path: str = "data/babylm",
+                 data_path: str = "../babylm_dataset",
                  tokenizer_name: str = "bert-base-uncased",
                  max_length: int = 512,
                  batch_size: int = 12,

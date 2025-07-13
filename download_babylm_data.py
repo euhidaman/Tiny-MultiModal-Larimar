@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent / "src"))
 def main():
     parser = argparse.ArgumentParser(
         description="Download BabyLM multimodal dataset")
-    parser.add_argument("--data_path", type=str, default="data/babylm",
+    parser.add_argument("--data_path", type=str, default="../babylm_dataset",
                         help="Directory to download data to")
     parser.add_argument("--dataset_type", type=str, default="cc_3M",
                         choices=["cc_3M", "local_narr"],

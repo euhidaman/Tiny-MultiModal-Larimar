@@ -1,7 +1,6 @@
 # Tiny-MultiModal-Larimar .gitignore
 
-# Datasets and Data Files
-data/
+# Datasets and Data Files (dataset moved to ../babylm_dataset)
 datasets/
 *.zip
 *.tar
